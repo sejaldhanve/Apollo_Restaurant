@@ -1,0 +1,132 @@
+# Apollo Restaurant OS — Local Development Infrastructure
+# Compose configuration orchestrating core persistence engines
+
+services:
+  # ─────────────────────────────────────────────────────────────
+  # PostgreSQL 16 — Primary Transactional ACID Database
+  # ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: apollo-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-apollo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
+      POSTGRES_DB: ${POSTGRES_DB:-apollo_restaurant}
+    volumes:
+      - ./docker-data/postgres:/var/lib/postgresql/data
+      - ./database/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-apollo} -d ${POSTGRES_DB:-apollo_restaurant}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - apollo-network
+
+  # ─────────────────────────────────────────────────────────────
+  # Neo4j 5 — Unified Commerce & Event Graph
+  # ─────────────────────────────────────────────────────────────
+  neo4j:
+    image: neo4j:5-community
+    container_name: apollo-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474" # HTTP Browser Console
+      - "7687:7687" # Bolt Binary Protocol
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-change_me_in_production}
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_memory_pagecache_size: 512M
+      NEO4J_dbms_memory_heap_initial__size: 512M
+      NEO4J_dbms_memory_heap_max__size: 1G
+    volumes:
+      - ./docker-data/neo4j/data:/data
+      - ./docker-data/neo4j/logs:/logs
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      - apollo-network
+
+  # ─────────────────────────────────────────────────────────────
+  # Qdrant v1.13 — Vector Search & Semantic Engine
+  # ─────────────────────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:v1.13.2
+    container_name: apollo-qdrant
+    restart: unless-stopped
+    ports:
+      - "${QDRANT_PORT:-6333}:6333" # REST HTTP API
+      - "6334:6334" # gRPC API
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-}
+    volumes:
+      - ./docker-data/qdrant:/qdrant/storage
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:6333/healthz || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - apollo-network
+
+  # ─────────────────────────────────────────────────────────────
+  # Redis 7 — Cache, Queue & Event Pub/Sub
+  # ─────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: apollo-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: >
+      sh -c '
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+        else
+          redis-server --appendonly yes
+        fi
+      '
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - ./docker-data/redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - apollo-network
+
+networks:
+  apollo-network:
+    name: apollo-network
+    driver: bridge
+
+volumes:
+  postgres-data:
+  neo4j-data:
+  qdrant-data:
+  redis-data:

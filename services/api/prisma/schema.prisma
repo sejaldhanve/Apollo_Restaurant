@@ -1,0 +1,50 @@
+// Apollo Restaurant OS — Primary Relational Schema
+// Multi-tenancy and core organizational domain
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// Represents an enterprise restaurant business or franchise operator.
+model Organization {
+  id          String     @id @default(uuid())
+  slug        String     @unique
+  name        String
+  legalName   String?
+  taxId       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  locations   Location[]
+
+  @@map("organizations")
+}
+
+/// Represents a distinct physical restaurant unit or cloud kitchen location.
+model Location {
+  id              String       @id @default(uuid())
+  organizationId  String
+  name            String
+  code            String
+  timezone        String       @default("UTC")
+  currency        String       @default("USD")
+  addressLine1    String?
+  addressLine2    String?
+  city            String?
+  state           String?
+  postalCode      String?
+  country         String       @default("US")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("locations")
+}
+

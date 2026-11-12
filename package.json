@@ -14,7 +14,7 @@
     "dev:api": "pnpm --filter @apollo/api dev",
     "build:web": "pnpm --filter @apollo/web build",
     "build:api": "pnpm --filter @apollo/api build",
-    "build:packages": "pnpm --filter './packages/**' build",
+    "build:packages": "pnpm --filter \"./packages/*\" build",
     "build": "pnpm run build:packages && pnpm run build:api && pnpm run build:web",
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
@@ -36,7 +36,8 @@
     "@typescript-eslint/parser": "^8.72.2",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.14.0",
     "prettier": "^3.10.0",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   }
 }
