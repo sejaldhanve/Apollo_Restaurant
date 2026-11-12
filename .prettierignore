@@ -6,4 +6,6 @@ coverage
 pnpm-lock.yaml
 *.min.js
 *.min.css
-
+.pytest_cache
+.venv
+docker-data
