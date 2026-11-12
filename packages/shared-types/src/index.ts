@@ -33,3 +33,56 @@ export interface ApiSuccessResponse<T> {
 }
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+// === Phase 1: Auth & Domain Types ===
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  status: string;
+  emailVerified: boolean;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  organizationName: string;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface AuthResponse {
+  user: AuthUser;
+  tokens: AuthTokens;
+  organizations: OrgMembershipInfo[];
+}
+
+export interface OrgMembershipInfo {
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  role: string;
+  permissions: string[];
+}
+
+export interface MeResponse {
+  user: AuthUser;
+  memberships: OrgMembershipInfo[];
+}

@@ -10,41 +10,240 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum OrgStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum LocationStatus {
+  ACTIVE
+  INACTIVE
+  TEMPORARILY_CLOSED
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+  PENDING_VERIFICATION
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  INVITED
+}
+
+enum RoleScope {
+  ORGANIZATION
+  LOCATION
+}
+
+// ─── Core Tenant Models ───────────────────────────────────────────────────────
+
 /// Represents an enterprise restaurant business or franchise operator.
 model Organization {
-  id          String     @id @default(uuid())
-  slug        String     @unique
-  name        String
-  legalName   String?
-  taxId       String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  locations   Location[]
+  id        String    @id @default(uuid())
+  slug      String    @unique
+  name      String
+  legalName String?
+  taxId     String?
+  status    OrgStatus @default(ACTIVE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  locations Location[]
+  members   OrganizationMembership[]
+  roles     Role[]
+  auditLogs AuditLog[]
 
   @@map("organizations")
 }
 
 /// Represents a distinct physical restaurant unit or cloud kitchen location.
 model Location {
-  id              String       @id @default(uuid())
-  organizationId  String
-  name            String
-  code            String
-  timezone        String       @default("UTC")
-  currency        String       @default("USD")
-  addressLine1    String?
-  addressLine2    String?
-  city            String?
-  state           String?
-  postalCode      String?
-  country         String       @default("US")
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String         @id @default(uuid())
+  organizationId String
+  name           String
+  code           String
+  timezone       String         @default("UTC")
+  currency       String         @default("USD")
+  addressLine1   String?
+  addressLine2   String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String         @default("US")
+  status         LocationStatus @default(ACTIVE)
+  address        String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization    Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  locationMembers LocationMembership[]
 
   @@unique([organizationId, code])
   @@index([organizationId])
   @@map("locations")
 }
 
+// ─── User & Auth Models ───────────────────────────────────────────────────────
+
+/// Global user account — NOT tenant-scoped.
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  status        UserStatus @default(PENDING_VERIFICATION)
+  emailVerified Boolean    @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  memberships   OrganizationMembership[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+/// Links a user to an organization with a role. Tenant-scoped.
+model OrganizationMembership {
+  id             String           @id @default(uuid())
+  userId         String
+  organizationId String
+  roleId         String
+  status         MembershipStatus @default(INVITED)
+  invitedAt      DateTime         @default(now())
+  joinedAt       DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role               Role                 @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  locationMemberships LocationMembership[]
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("organization_memberships")
+}
+
+/// Grants an org member access to a specific location. Tenant-scoped.
+model LocationMembership {
+  id                       String   @id @default(uuid())
+  organizationMembershipId String
+  locationId               String
+  organizationId           String // denormalized for RLS
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  organizationMembership OrganizationMembership @relation(fields: [organizationMembershipId], references: [id], onDelete: Cascade)
+  location               Location               @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationMembershipId, locationId])
+  @@index([organizationId])
+  @@map("location_memberships")
+}
+
+// ─── RBAC Models ──────────────────────────────────────────────────────────────
+
+/// A named role scoped to an organization. Tenant-scoped.
+model Role {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  isSystem       Boolean   @default(false)
+  scope          RoleScope @default(ORGANIZATION)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions  RolePermission[]
+  members      OrganizationMembership[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("roles")
+}
+
+/// Global permission definition — NOT tenant-scoped.
+model Permission {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  module      String
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+/// Maps a permission to a role. Tenant-scoped (denormalized orgId for RLS).
+model RolePermission {
+  id             String   @id @default(uuid())
+  roleId         String
+  permissionId   String
+  organizationId String // denormalized for RLS
+  createdAt      DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([organizationId])
+  @@map("role_permissions")
+}
+
+// ─── Token Management ─────────────────────────────────────────────────────────
+
+/// Refresh token for JWT rotation. NOT tenant-scoped; secured by tokenHash.
+model RefreshToken {
+  id               String    @id @default(uuid())
+  userId           String
+  tokenHash        String    @unique
+  family           String
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  replacedByTokenId String?
+  userAgent        String?
+  ipAddress        String?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([family])
+  @@map("refresh_tokens")
+}
+
+// ─── Audit ────────────────────────────────────────────────────────────────────
+
+/// Records actions for compliance and debugging. Tenant-scoped.
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String?
+  actorId        String?
+  action         String
+  entityType     String?
+  entityId       String?
+  metadata       Json?
+  ipAddress      String?
+  requestId      String?
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  actor        User?         @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([actorId])
+  @@map("audit_logs")
+}

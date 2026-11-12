@@ -21,6 +21,12 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().default(300),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().default(20),
   RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
+  JWT_SECRET: z
+    .string()
+    .min(32)
+    .default("CHANGE_ME_IN_PRODUCTION_minimum_32_chars_long!!"),
+  JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
+  JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 });
 
 const parsed = envSchema.safeParse(process.env);
