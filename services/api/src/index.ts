@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
+import { closeRedis } from "./config/redis.js";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -29,6 +30,7 @@ async function bootstrap(): Promise<void> {
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "Shutting down...");
     io.close();
+    await closeRedis();
     httpServer.close(() => {
       logger.info("Server closed");
       process.exit(0);

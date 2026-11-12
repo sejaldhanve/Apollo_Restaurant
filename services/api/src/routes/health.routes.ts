@@ -1,5 +1,9 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import type {
+  HealthCheckResponse,
+  ApiSuccessResponse,
+} from "@apollo/shared-types";
 import { env } from "../config/env.js";
 
 export const healthRouter: Router = Router();
@@ -16,15 +20,19 @@ export const healthRouter: Router = Router();
  *         description: Service is healthy
  */
 healthRouter.get("/", (_req: Request, res: Response) => {
-  res.json({
+  const healthData: HealthCheckResponse & { uptime: number } = {
+    status: "healthy",
+    version: "0.1.0",
+    environment: env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    services: {},
+  };
+
+  const response: ApiSuccessResponse<typeof healthData> = {
     success: true,
-    data: {
-      status: "healthy",
-      version: "0.1.0",
-      environment: env.NODE_ENV,
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      services: {},
-    },
-  });
+    data: healthData,
+  };
+
+  res.json(response);
 });

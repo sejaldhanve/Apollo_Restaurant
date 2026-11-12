@@ -7,6 +7,7 @@ import { requestLogger } from "./middleware/request-logger.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { notFoundHandler } from "./middleware/not-found.js";
 import { requestId } from "./middleware/request-id.js";
+import { globalRateLimiter } from "./middleware/rate-limiter.js";
 import { apiRouter } from "./routes/index.js";
 import { setupSwagger } from "./config/swagger.js";
 
@@ -27,6 +28,9 @@ export function createApp(): express.Application {
   // Request tracking
   app.use(requestId);
   app.use(requestLogger);
+
+  // Rate Limiting (Redis-backed with fail-open resiliency)
+  app.use("/api/v1", globalRateLimiter);
 
   // API documentation
   setupSwagger(app);

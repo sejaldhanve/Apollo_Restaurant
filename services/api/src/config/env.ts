@@ -16,6 +16,11 @@ const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   REDIS_HOST: z.string().default("localhost"),
   REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional(),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60_000),
+  RATE_LIMIT_MAX: z.coerce.number().default(300),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(20),
+  RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
 });
 
 const parsed = envSchema.safeParse(process.env);
