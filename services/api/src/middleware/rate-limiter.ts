@@ -1,7 +1,8 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction, RequestHandler } from "express";
 import rateLimit, {
   type Options,
   type Store,
+  type RateLimitRequestHandler,
   MemoryStore,
 } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
@@ -51,13 +52,19 @@ function createRateLimitHandler(message: string) {
 
 /**
  * Creates a RedisStore backed by the configured Redis client.
+ * Guards against executing commands when the Redis client is not in 'ready' state.
  */
 export function createRedisStore(client?: Redis, prefix = "rl:global:"): Store {
   const redis = client ?? getRedisClient();
 
-  return new RedisStore({
+  const store = new RedisStore({
     // @ts-expect-error - sendCommand signature matches ioredis.call
     sendCommand: async (...args: string[]) => {
+      if (redis.status !== "ready") {
+        throw new Error(
+          `Redis client is not ready for commands (current status: ${redis.status})`,
+        );
+      }
       try {
         return await redis.call(args[0]!, ...args.slice(1));
       } catch (err) {
@@ -70,6 +77,22 @@ export function createRedisStore(client?: Redis, prefix = "rl:global:"): Store {
     },
     prefix,
   });
+
+  // Suppress unhandled promise rejections on initial script load
+  // if Redis is still establishing its connection when the store is constructed.
+  // rate-limit-redis will reload scripts on-demand once connection becomes ready.
+  const anyStore = store as unknown as {
+    incrementScriptSha?: Promise<string>;
+    getScriptSha?: Promise<string>;
+  };
+  if (anyStore.incrementScriptSha?.catch) {
+    anyStore.incrementScriptSha.catch(() => {});
+  }
+  if (anyStore.getScriptSha?.catch) {
+    anyStore.getScriptSha.catch(() => {});
+  }
+
+  return store;
 }
 
 /**
@@ -115,20 +138,47 @@ export function createRateLimiter(config: RateLimiterConfig = {}) {
   });
 }
 
-/**
- * Global rate limiter for /api/v1 (e.g. 300 req/min for general operations).
- */
-export const globalRateLimiter = createRateLimiter({
-  windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: env.RATE_LIMIT_MAX,
-  prefix: "rl:api:global:",
-});
+// Module-internal limiter instances, lazily initialized or eagerly initialized via initRateLimiters()
+let _globalLimiter: RateLimitRequestHandler | null = null;
+let _sensitiveLimiter: RateLimitRequestHandler | null = null;
 
 /**
- * Strict rate limiter for sensitive authentication / credential endpoints (e.g. 20 req/min).
+ * Eagerly initializes the rate limiters after Redis has established connection.
  */
-export const sensitiveRateLimiter = createRateLimiter({
-  windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: env.AUTH_RATE_LIMIT_MAX,
-  prefix: "rl:api:sensitive:",
-});
+export function initRateLimiters(): void {
+  _globalLimiter = createRateLimiter({
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    max: env.RATE_LIMIT_MAX,
+    prefix: "rl:api:global:",
+  }) as RateLimitRequestHandler;
+
+  _sensitiveLimiter = createRateLimiter({
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    max: env.AUTH_RATE_LIMIT_MAX,
+    prefix: "rl:api:sensitive:",
+  }) as RateLimitRequestHandler;
+
+  logger.info("Rate limiters initialized with Redis store");
+}
+
+/**
+ * Global rate limiter middleware for /api/v1 (e.g. 300 req/min for general operations).
+ * Lazily initializes on first request if initRateLimiters() was not invoked.
+ */
+export const globalRateLimiter: RequestHandler = (req, res, next) => {
+  if (!_globalLimiter) {
+    initRateLimiters();
+  }
+  return (_globalLimiter as RateLimitRequestHandler)(req, res, next);
+};
+
+/**
+ * Strict rate limiter middleware for sensitive authentication / credential endpoints (e.g. 20 req/min).
+ * Lazily initializes on first request if initRateLimiters() was not invoked.
+ */
+export const sensitiveRateLimiter: RequestHandler = (req, res, next) => {
+  if (!_sensitiveLimiter) {
+    initRateLimiters();
+  }
+  return (_sensitiveLimiter as RateLimitRequestHandler)(req, res, next);
+};

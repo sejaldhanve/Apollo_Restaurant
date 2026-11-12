@@ -50,4 +50,3 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshInput = z.infer<typeof refreshSchema>;
 export type SwitchOrgInput = z.infer<typeof switchOrgSchema>;
-

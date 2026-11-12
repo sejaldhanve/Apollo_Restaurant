@@ -286,4 +286,3 @@ authRouter.get(
     }
   },
 );
-

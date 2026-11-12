@@ -4,6 +4,7 @@ import { logger } from "./logger.js";
 
 let redisClient: Redis | null = null;
 let isConnected = false;
+let isReady = false;
 
 /**
  * Creates or retrieves the singleton Redis client.
@@ -38,11 +39,19 @@ export function getRedisClient(): Redis {
 
   redisClient.on("ready", () => {
     isConnected = true;
+    isReady = true;
     logger.info("Redis client ready for commands");
   });
 
-  redisClient.on("error", (err) => {
+  redisClient.on("reconnecting", (delay: number) => {
     isConnected = false;
+    isReady = false;
+    logger.warn({ delay }, "Redis reconnecting");
+  });
+
+  redisClient.on("error", (err: Error) => {
+    isConnected = false;
+    isReady = false;
     // Log as warning rather than error so intermittent connectivity doesn't flood alert channels
     logger.warn(
       { err: err.message },
@@ -52,25 +61,116 @@ export function getRedisClient(): Redis {
 
   redisClient.on("close", () => {
     isConnected = false;
+    isReady = false;
     logger.warn("Redis connection closed");
   });
 
-  // Attempt initial connect without throwing
-  redisClient.connect().catch((err) => {
-    logger.warn(
-      { err: err.message },
-      "Initial Redis connection failed — operating in memory/fallback mode",
-    );
+  redisClient.on("end", () => {
+    isConnected = false;
+    isReady = false;
+    logger.warn("Redis connection ended");
   });
+
+  // Attempt initial connect without throwing
+  if (redisClient.status === "wait") {
+    redisClient.connect().catch((err: Error) => {
+      logger.warn(
+        { err: err.message },
+        "Initial Redis connection attempt failed — operating in fallback mode",
+      );
+    });
+  }
 
   return redisClient;
 }
 
 /**
- * Checks if the Redis connection is active and healthy.
+ * Checks if the Redis connection is active.
  */
 export function isRedisConnected(): boolean {
   return isConnected;
+}
+
+/**
+ * Checks if the Redis client is ready to accept commands.
+ */
+export function isRedisReady(): boolean {
+  return isReady && redisClient?.status === "ready";
+}
+
+/**
+ * Connects to Redis and waits until the client reaches the 'ready' state.
+ * Resolves null instead of throwing if connection fails or times out,
+ * allowing services to operate in fail-open mode.
+ */
+export async function initRedis(timeoutMs = 3000): Promise<Redis | null> {
+  const client = getRedisClient();
+
+  if (client.status === "ready") {
+    isReady = true;
+    isConnected = true;
+    return client;
+  }
+
+  return new Promise((resolve) => {
+    let resolved = false;
+
+    const cleanup = () => {
+      client.removeListener("ready", onReady);
+      client.removeListener("error", onError);
+      if (timer) clearTimeout(timer);
+    };
+
+    const onReady = () => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        isReady = true;
+        isConnected = true;
+        resolve(client);
+      }
+    };
+
+    const onError = (err: Error) => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        isReady = false;
+        isConnected = false;
+        logger.warn(
+          { err: err.message },
+          "Redis failed to connect during initialization — operating in fail-open mode",
+        );
+        resolve(null);
+      }
+    };
+
+    client.once("ready", onReady);
+    client.once("error", onError);
+
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        isReady = false;
+        isConnected = false;
+        logger.warn(
+          { timeoutMs },
+          "Redis connection initialization timed out — operating in fail-open mode",
+        );
+        resolve(null);
+      }
+    }, timeoutMs);
+
+    if (client.status === "wait") {
+      client.connect().catch((err: Error) => {
+        logger.warn(
+          { err: err.message },
+          "Initial Redis connection attempt failed — operating in fallback mode",
+        );
+      });
+    }
+  });
 }
 
 /**
@@ -85,6 +185,7 @@ export async function closeRedis(): Promise<void> {
     } finally {
       redisClient = null;
       isConnected = false;
+      isReady = false;
     }
   }
 }

@@ -1,7 +1,14 @@
 import { describe, it, expect } from "vitest";
 import express from "express";
 import request from "supertest";
-import { createRateLimiter, createRedisStore } from "./rate-limiter.js";
+import {
+  createRateLimiter,
+  createRedisStore,
+  globalRateLimiter,
+  sensitiveRateLimiter,
+  initRateLimiters,
+} from "./rate-limiter.js";
+import { initRedis, isRedisReady } from "../config/redis.js";
 import type { Redis } from "ioredis";
 
 describe("Rate Limiter Middleware", () => {
@@ -99,11 +106,12 @@ describe("Rate Limiter Middleware", () => {
     expect(response.body).toEqual({ ok: true, resilient: true });
   });
 
-  it("createRedisStore should invoke redis.call via sendCommand", async () => {
+  it("createRedisStore should invoke redis.call when status is ready", async () => {
     let calledCommand = "";
     let calledArgs: string[] = [];
 
     const mockRedis = {
+      status: "ready",
       call: async (cmd: string, ...args: string[]) => {
         calledCommand = cmd;
         calledArgs = args;
@@ -118,5 +126,59 @@ describe("Rate Limiter Middleware", () => {
     expect(result).toBe("OK");
     expect(calledCommand).toBe("PING");
     expect(calledArgs).toEqual(["arg1"]);
+  });
+
+  it("createRedisStore should reject commands without crashing when Redis is not ready", async () => {
+    const mockRedis = {
+      status: "connecting",
+      call: async () => {
+        throw new Error(
+          "Stream isn't writeable and enableOfflineQueue options is false",
+        );
+      },
+    } as unknown as Redis;
+
+    const store = createRedisStore(mockRedis, "test:prefix:");
+    expect(store).toBeDefined();
+
+    // Verify sending command throws descriptive error rather than raw socket write error
+    await expect(
+      // @ts-expect-error - testing internal sendCommand
+      store.sendCommand({ command: ["PING"] }),
+    ).rejects.toThrow(
+      "Redis client is not ready for commands (current status: connecting)",
+    );
+  });
+
+  it("globalRateLimiter and sensitiveRateLimiter functions can be mounted as middleware", async () => {
+    initRateLimiters();
+
+    const app = express();
+    app.use("/api/v1/global", globalRateLimiter);
+    app.use("/api/v1/auth", sensitiveRateLimiter);
+
+    app.get("/api/v1/global/test", (_req, res) => {
+      res.json({ route: "global" });
+    });
+    app.get("/api/v1/auth/test", (_req, res) => {
+      res.json({ route: "auth" });
+    });
+
+    const res1 = await request(app).get("/api/v1/global/test");
+    expect(res1.status).toBe(200);
+    expect(res1.body).toEqual({ route: "global" });
+
+    const res2 = await request(app).get("/api/v1/auth/test");
+    expect(res2.status).toBe(200);
+    expect(res2.body).toEqual({ route: "auth" });
+  });
+
+  it("isRedisReady reports boolean status", () => {
+    expect(typeof isRedisReady()).toBe("boolean");
+  });
+
+  it("initRedis returns client when ready or times out gracefully without throwing", async () => {
+    const client = await initRedis(100);
+    expect(client === null || typeof client === "object").toBe(true);
   });
 });

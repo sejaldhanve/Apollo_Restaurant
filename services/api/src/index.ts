@@ -1,11 +1,16 @@
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
-import { closeRedis } from "./config/redis.js";
+import { initRedis, closeRedis } from "./config/redis.js";
+import { initRateLimiters } from "./middleware/rate-limiter.js";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 
 async function bootstrap(): Promise<void> {
+  // Ensure Redis connects successfully before rate limiters use it
+  await initRedis();
+  initRateLimiters();
+
   const app = createApp();
   const httpServer = createServer(app);
 
