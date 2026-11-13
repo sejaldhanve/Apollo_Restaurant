@@ -1,11 +1,18 @@
-import { Outlet, useNavigate } from "react-router";
+import { Outlet, useNavigate, Link, useLocation } from "react-router";
 import { useAuthStore } from "../stores/authStore";
 import { OrgSelector } from "../components/auth/OrgSelector";
-import { LogOut, UserCircle2, UtensilsCrossed } from "lucide-react";
+import {
+  LogOut,
+  UserCircle2,
+  UtensilsCrossed,
+  LayoutDashboard,
+  Grid3X3,
+} from "lucide-react";
 
 export function RootLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
@@ -14,20 +21,55 @@ export function RootLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <header className="border-b border-gray-200 bg-white px-6 py-3.5 shadow-xs">
+      <header className="border-b border-gray-200 bg-white px-6 py-3 shadow-xs">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-6">
+            <Link to="/" className="flex items-center space-x-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs">
                 <UtensilsCrossed className="h-4 w-4" />
               </div>
               <h1 className="text-lg font-bold tracking-tight text-indigo-600">
                 Apollo Restaurant OS
               </h1>
-            </div>
-            <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-              v0.1.0-alpha
-            </span>
+            </Link>
+
+            <nav className="flex items-center space-x-1">
+              <Link
+                to="/"
+                className={`flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  location.pathname === "/"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                <span>Dashboard</span>
+              </Link>
+
+              <Link
+                to="/menu"
+                className={`flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  location.pathname.startsWith("/menu")
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <UtensilsCrossed className="h-3.5 w-3.5" />
+                <span>Menu & Catalog</span>
+              </Link>
+
+              <Link
+                to="/floor-plan"
+                className={`flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  location.pathname.startsWith("/floor-plan")
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Grid3X3 className="h-3.5 w-3.5" />
+                <span>Floor Plan</span>
+              </Link>
+            </nav>
           </div>
 
           <div className="flex items-center space-x-4">

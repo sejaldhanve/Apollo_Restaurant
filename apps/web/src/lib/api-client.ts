@@ -39,8 +39,16 @@ async function refreshAccessToken(): Promise<string | null> {
     });
 
     if (!res.ok) return null;
-    const body = await res.json();
-    if (!body.success || !body.data?.accessToken) return null;
+    const text = await res.text();
+    if (!text || !text.trim()) return null;
+
+    let body: any;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      return null;
+    }
+    if (!body?.success || !body.data?.accessToken) return null;
 
     const newAccessToken = body.data.accessToken as string;
     const newRefreshToken = body.data.refreshToken as string;
@@ -121,9 +129,16 @@ async function request<T>(
   }
 
   if (!response.ok) {
-    const errorData = (await response
-      .json()
-      .catch(() => null)) as ApiErrorResponse | null;
+    let errorData: ApiErrorResponse | null = null;
+    try {
+      const text = await response.text();
+      if (text && text.trim()) {
+        errorData = JSON.parse(text) as ApiErrorResponse;
+      }
+    } catch {
+      errorData = null;
+    }
+
     const errorMessage =
       errorData?.error?.message ||
       `Request failed with status ${response.status}`;
@@ -134,7 +149,22 @@ async function request<T>(
 
   if (response.status === 204) return undefined as T;
 
-  const json = await response.json();
+  const text = await response.text();
+  if (!text || !text.trim()) {
+    return undefined as T;
+  }
+
+  let json: any;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new ApiError(
+      response.status,
+      "Received invalid JSON response from server",
+      "INVALID_JSON",
+    );
+  }
+
   return json.data !== undefined ? json.data : json;
 }
 

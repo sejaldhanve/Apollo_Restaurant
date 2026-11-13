@@ -110,7 +110,12 @@ export function requirePermission(...requiredPermissions: string[]) {
     const userPermissions = new Set(req.currentMembership.permissions);
 
     // Owners have wildcard or all permissions
-    if (req.currentMembership.role === "Owner") {
+    if (
+      req.currentMembership.role === "Owner" ||
+      req.currentMembership.role === "Organization Owner" ||
+      userPermissions.has("org:manage") ||
+      userPermissions.has("*")
+    ) {
       return next();
     }
 

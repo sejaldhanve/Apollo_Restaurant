@@ -24,8 +24,9 @@ export function getRedisClient(): Redis {
     enableOfflineQueue: false, // Prevents command queue backlog during outages
     maxRetriesPerRequest: 1,
     retryStrategy(times) {
-      // Exponential backoff with 5s cap
-      return Math.min(times * 100, 5000);
+      // Backoff up to 10s to prevent console log flooding when Redis is offline
+      if (times > 10) return 10000;
+      return Math.min(times * 500, 5000);
     },
   });
 

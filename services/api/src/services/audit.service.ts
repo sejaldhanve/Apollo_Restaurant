@@ -84,3 +84,7 @@ export async function createAuditLog(
     );
   }
 }
+
+export const AuditService = {
+  log: createAuditLog,
+};

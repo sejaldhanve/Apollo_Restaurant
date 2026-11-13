@@ -78,6 +78,44 @@ export const SYSTEM_PERMISSIONS = [
     description: "View menu items and categories",
     module: "menu",
   },
+  {
+    code: "menu:86_toggle",
+    name: "Toggle Item Availability",
+    description: "Toggle 86 / out-of-stock availability for menu items",
+    module: "menu",
+  },
+
+  // FoH Table Management
+  {
+    code: "table:view",
+    name: "View Floor Plan & Tables",
+    description: "View floor plans, dining areas, and table occupancy status",
+    module: "foh",
+  },
+  {
+    code: "table:manage",
+    name: "Manage Floor Plan & Tables",
+    description: "Create, update, and configure dining rooms and physical table layouts",
+    module: "foh",
+  },
+  {
+    code: "table:seat",
+    name: "Seat Parties",
+    description: "Seat parties and assign active servers to dining tables",
+    module: "foh",
+  },
+  {
+    code: "table:status_update",
+    name: "Update Table Status",
+    description: "Update table state machine (Available, Seated, Dirty, etc.)",
+    module: "foh",
+  },
+  {
+    code: "table:transfer",
+    name: "Transfer Tables & Parties",
+    description: "Transfer guest parties or assigned servers between tables",
+    module: "foh",
+  },
 
   // Order
   {
@@ -192,6 +230,16 @@ export const SYSTEM_ROLES = [
       "role:view",
       "menu:manage",
       "menu:view",
+      "menu:86_toggle",
+      "table:view",
+      "table:seat",
+      "table:status_update",
+      "table:transfer",
+      "table:view",
+      "table:manage",
+      "table:seat",
+      "table:status_update",
+      "table:transfer",
       "order:create",
       "order:view",
       "order:manage",
@@ -211,6 +259,11 @@ export const SYSTEM_ROLES = [
     scope: "LOCATION" as const,
     permissions: [
       "menu:view",
+      "menu:86_toggle",
+      "table:view",
+      "table:seat",
+      "table:status_update",
+      "table:transfer",
       "order:create",
       "order:view",
       "payment:process",
@@ -221,7 +274,7 @@ export const SYSTEM_ROLES = [
     name: "Kitchen",
     description: "Back-of-house staff viewing orders and managing inventory",
     scope: "LOCATION" as const,
-    permissions: ["menu:view", "order:view", "inventory:view"],
+    permissions: ["menu:view", "menu:86_toggle", "order:view", "inventory:view"],
   },
   {
     name: "Viewer",

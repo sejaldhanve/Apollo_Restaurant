@@ -45,7 +45,23 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
     const migration1Sql = fs.readFileSync(migration1Path, "utf-8");
     await db.exec(migration1Sql);
 
-    // 3. Create unprivileged application runtime role (NOSUPERUSER, NOBYPASSRLS)
+    // 3. Load and execute the Phase 2 Module 1 menu migration
+    const migration2Path = path.resolve(
+      __dirname,
+      "../../prisma/migrations/20261113100000_phase2_module1_menu/migration.sql",
+    );
+    const migration2Sql = fs.readFileSync(migration2Path, "utf-8");
+    await db.exec(migration2Sql);
+
+    // 4. Load and execute the Phase 2 Module 2 FoH tables migration
+    const migration3Path = path.resolve(
+      __dirname,
+      "../../prisma/migrations/20261113200000_phase2_module2_foh_tables/migration.sql",
+    );
+    const migration3Sql = fs.readFileSync(migration3Path, "utf-8");
+    await db.exec(migration3Sql);
+
+    // 4. Create unprivileged application runtime role (NOSUPERUSER, NOBYPASSRLS)
     await db.exec(`
       DO $$
       BEGIN
@@ -337,5 +353,204 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
     expect(logIds).toContain("log-a");
     expect(logIds).toContain("log-sys");
     expect(logIds).not.toContain("log-b");
+  });
+
+  it("11. Phase 2: Menu items, categories and modifier groups isolate by tenant", async () => {
+    // Seed menu, category, item for Tenant A and Tenant B as superuser
+    await db.exec("RESET ROLE;");
+    await db.exec(`
+      INSERT INTO "menus" ("id", "organizationId", "name", "updatedAt")
+      VALUES ('menu-a', '${TENANT_A_ID}', 'Dinner Menu A', NOW()),
+             ('menu-b', '${TENANT_B_ID}', 'Dinner Menu B', NOW());
+
+      INSERT INTO "menu_categories" ("id", "organizationId", "menuId", "name", "updatedAt")
+      VALUES ('cat-a', '${TENANT_A_ID}', 'menu-a', 'Steaks A', NOW()),
+             ('cat-b', '${TENANT_B_ID}', 'menu-b', 'Pastas B', NOW());
+
+      INSERT INTO "menu_items" ("id", "organizationId", "categoryId", "name", "basePriceCents", "updatedAt")
+      VALUES ('item-a1', '${TENANT_A_ID}', 'cat-a', 'Ribeye 12oz', 4500, NOW()),
+             ('item-b1', '${TENANT_B_ID}', 'cat-b', 'Truffle Tagliatelle', 3200, NOW());
+
+      INSERT INTO "modifier_groups" ("id", "organizationId", "name", "updatedAt")
+      VALUES ('mg-a', '${TENANT_A_ID}', 'Meat Temp A', NOW()),
+             ('mg-b', '${TENANT_B_ID}', 'Pasta Type B', NOW());
+    `);
+    await db.exec("SET ROLE apollo_app;");
+
+    // Query as Tenant A
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`);
+
+    const itemsA = await db.query<{ id: string; name: string }>(`SELECT "id", "name" FROM "menu_items";`);
+    const groupsA = await db.query<{ id: string }>(`SELECT "id" FROM "modifier_groups";`);
+    await db.exec("COMMIT;");
+
+    expect(itemsA.rows.length).toBe(1);
+    expect(itemsA.rows[0]?.id).toBe("item-a1");
+    expect(itemsA.rows[0]?.name).toBe("Ribeye 12oz");
+    expect(groupsA.rows.length).toBe(1);
+    expect(groupsA.rows[0]?.id).toBe("mg-a");
+
+    // Query as Tenant B
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`);
+
+    const itemsB = await db.query<{ id: string; name: string }>(`SELECT "id", "name" FROM "menu_items";`);
+    const groupsB = await db.query<{ id: string }>(`SELECT "id" FROM "modifier_groups";`);
+    await db.exec("COMMIT;");
+
+    expect(itemsB.rows.length).toBe(1);
+    expect(itemsB.rows[0]?.id).toBe("item-b1");
+    expect(itemsB.rows[0]?.name).toBe("Truffle Tagliatelle");
+    expect(groupsB.rows.length).toBe(1);
+    expect(groupsB.rows[0]?.id).toBe("mg-b");
+  });
+
+  it("12. Phase 2: Tenant A cannot update or delete Tenant B menu items", async () => {
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`);
+
+    // Attempt to maliciously modify Tenant B's item
+    const updateResult = await db.query(
+      `UPDATE "menu_items" SET "name" = 'Hacked Name', "basePriceCents" = 0 WHERE "id" = 'item-b1';`
+    );
+    expect(updateResult.affectedRows).toBe(0);
+
+    // Attempt to delete Tenant B's item
+    const deleteResult = await db.query(`DELETE FROM "menu_items" WHERE "id" = 'item-b1';`);
+    expect(deleteResult.affectedRows).toBe(0);
+
+    await db.exec("COMMIT;");
+
+    // Verify Tenant B's item is untouched
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`);
+    const checkItem = await db.query<{ name: string; basePriceCents: number }>(
+      `SELECT "name", "basePriceCents" FROM "menu_items" WHERE "id" = 'item-b1';`
+    );
+    await db.exec("COMMIT;");
+
+    expect(checkItem.rows[0]?.name).toBe("Truffle Tagliatelle");
+    expect(checkItem.rows[0]?.basePriceCents).toBe(3200);
+  });
+
+  it("13. Phase 2: Missing tenant context yields 0 records across all menu tables", async () => {
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '', true);`);
+
+    const items = await db.query(`SELECT * FROM "menu_items";`);
+    const menus = await db.query(`SELECT * FROM "menus";`);
+    const groups = await db.query(`SELECT * FROM "modifier_groups";`);
+    const stations = await db.query(`SELECT * FROM "kitchen_stations";`);
+
+    await db.exec("COMMIT;");
+
+    expect(items.rows.length).toBe(0);
+    expect(menus.rows.length).toBe(0);
+    expect(groups.rows.length).toBe(0);
+    expect(stations.rows.length).toBe(0);
+  });
+
+  it("14. Phase 2: Kitchen stations and location overrides isolate strictly by tenant", async () => {
+    await db.exec("RESET ROLE;");
+    await db.exec(`
+      INSERT INTO "kitchen_stations" ("id", "organizationId", "locationId", "name", "code", "updatedAt")
+      VALUES ('ks-a1', '${TENANT_A_ID}', '${LOC_A1_ID}', 'Grill A', 'GRILL-01', NOW()),
+             ('ks-b1', '${TENANT_B_ID}', '${LOC_B1_ID}', 'Pasta B', 'PASTA-01', NOW());
+
+      INSERT INTO "location_menu_overrides" ("id", "organizationId", "locationId", "menuItemId", "overridePriceCents", "updatedAt")
+      VALUES ('ov-a1', '${TENANT_A_ID}', '${LOC_A1_ID}', 'item-a1', 4800, NOW());
+    `);
+    await db.exec("SET ROLE apollo_app;");
+
+    // Query as Tenant A
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`);
+
+    const stationsA = await db.query<{ id: string }>(`SELECT "id" FROM "kitchen_stations";`);
+    const overridesA = await db.query<{ id: string }>(`SELECT "id" FROM "location_menu_overrides";`);
+    await db.exec("COMMIT;");
+
+    expect(stationsA.rows.length).toBe(1);
+    expect(stationsA.rows[0]?.id).toBe("ks-a1");
+    expect(overridesA.rows.length).toBe(1);
+    expect(overridesA.rows[0]?.id).toBe("ov-a1");
+
+    // Query as Tenant B
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`);
+
+    const stationsB = await db.query<{ id: string }>(`SELECT "id" FROM "kitchen_stations";`);
+    const overridesB = await db.query<{ id: string }>(`SELECT "id" FROM "location_menu_overrides";`);
+    await db.exec("COMMIT;");
+
+    expect(stationsB.rows.length).toBe(1);
+    expect(stationsB.rows[0]?.id).toBe("ks-b1");
+    expect(overridesB.rows.length).toBe(0); // Tenant B has no overrides
+  });
+
+  it("15. Phase 2 Module 2: Dining areas, tables, and table sessions strictly isolate across tenants", async () => {
+    await db.exec("RESET ROLE;");
+    await db.exec(`
+      INSERT INTO "dining_areas" ("id", "organizationId", "locationId", "name", "sortOrder", "updatedAt")
+      VALUES ('area-a1', '${TENANT_A_ID}', '${LOC_A1_ID}', 'Main Dining A', 1, NOW()),
+             ('area-b1', '${TENANT_B_ID}', '${LOC_B1_ID}', 'Patio B', 1, NOW());
+
+      INSERT INTO "tables" ("id", "organizationId", "locationId", "diningAreaId", "tableNumber", "status", "updatedAt")
+      VALUES ('tbl-a1', '${TENANT_A_ID}', '${LOC_A1_ID}', 'area-a1', 'T1', 'SEATED', NOW()),
+             ('tbl-b1', '${TENANT_B_ID}', '${LOC_B1_ID}', 'area-b1', 'T10', 'AVAILABLE', NOW());
+
+      INSERT INTO "table_sessions" ("id", "organizationId", "locationId", "tableId", "guestCount", "status", "updatedAt")
+      VALUES ('sess-a1', '${TENANT_A_ID}', '${LOC_A1_ID}', 'tbl-a1', 4, 'ACTIVE', NOW()),
+             ('sess-b1', '${TENANT_B_ID}', '${LOC_B1_ID}', 'tbl-b1', 2, 'ACTIVE', NOW());
+    `);
+    await db.exec("SET ROLE apollo_app;");
+
+    // Query as Tenant A
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`);
+
+    const areasA = await db.query<{ id: string }>(`SELECT "id" FROM "dining_areas";`);
+    const tablesA = await db.query<{ id: string }>(`SELECT "id" FROM "tables";`);
+    const sessionsA = await db.query<{ id: string }>(`SELECT "id" FROM "table_sessions";`);
+    await db.exec("COMMIT;");
+
+    expect(areasA.rows.length).toBe(1);
+    expect(areasA.rows[0]?.id).toBe("area-a1");
+    expect(tablesA.rows.length).toBe(1);
+    expect(tablesA.rows[0]?.id).toBe("tbl-a1");
+    expect(sessionsA.rows.length).toBe(1);
+    expect(sessionsA.rows[0]?.id).toBe("sess-a1");
+
+    // Query as Tenant B
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`);
+
+    const areasB = await db.query<{ id: string }>(`SELECT "id" FROM "dining_areas";`);
+    const tablesB = await db.query<{ id: string }>(`SELECT "id" FROM "tables";`);
+    const sessionsB = await db.query<{ id: string }>(`SELECT "id" FROM "table_sessions";`);
+    await db.exec("COMMIT;");
+
+    expect(areasB.rows.length).toBe(1);
+    expect(areasB.rows[0]?.id).toBe("area-b1");
+    expect(tablesB.rows.length).toBe(1);
+    expect(tablesB.rows[0]?.id).toBe("tbl-b1");
+    expect(sessionsB.rows.length).toBe(1);
+    expect(sessionsB.rows[0]?.id).toBe("sess-b1");
+  });
+
+  it("16. Phase 2 Module 2: Querying FoH tables without tenant context returns 0 rows", async () => {
+    await db.exec("SET ROLE apollo_app;");
+    await db.exec("BEGIN;");
+    await db.exec(`SELECT set_config('app.current_tenant_id', '', true);`);
+
+    const areas = await db.query(`SELECT * FROM "dining_areas";`);
+    const tables = await db.query(`SELECT * FROM "tables";`);
+    const sessions = await db.query(`SELECT * FROM "table_sessions";`);
+    await db.exec("COMMIT;");
+
+    expect(areas.rows.length).toBe(0);
+    expect(tables.rows.length).toBe(0);
+    expect(sessions.rows.length).toBe(0);
   });
 });

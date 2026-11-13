@@ -42,6 +42,16 @@ enum RoleScope {
   LOCATION
 }
 
+enum StationType {
+  KITCHEN
+  BAR
+  GRILL
+  SALAD
+  PIZZA
+  EXPO
+  DESSERT
+}
+
 // ─── Core Tenant Models ───────────────────────────────────────────────────────
 
 /// Represents an enterprise restaurant business or franchise operator.
@@ -55,35 +65,52 @@ model Organization {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  locations Location[]
-  members   OrganizationMembership[]
-  roles     Role[]
-  auditLogs AuditLog[]
+  locations              Location[]
+  members                OrganizationMembership[]
+  roles                  Role[]
+  auditLogs              AuditLog[]
+  kitchenStations        KitchenStation[]
+  taxRates               TaxRate[]
+  menus                  Menu[]
+  menuCategories         MenuCategory[]
+  menuItems              MenuItem[]
+  modifierGroups         ModifierGroup[]
+  menuItemModifierGroups MenuItemModifierGroup[]
+  modifierOptions        ModifierOption[]
+  locationMenuOverrides  LocationMenuOverride[]
+  diningAreas            DiningArea[]
+  tables                 Table[]
+  tableSessions          TableSession[]
 
   @@map("organizations")
 }
 
 /// Represents a distinct physical restaurant unit or cloud kitchen location.
 model Location {
-  id             String         @id @default(uuid())
+  id           String         @id @default(uuid())
   organizationId String
-  name           String
-  code           String
-  timezone       String         @default("UTC")
-  currency       String         @default("USD")
-  addressLine1   String?
-  addressLine2   String?
-  city           String?
-  state          String?
-  postalCode     String?
-  country        String         @default("US")
-  status         LocationStatus @default(ACTIVE)
-  address        String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  name         String
+  code         String
+  timezone     String         @default("UTC")
+  currency     String         @default("USD")
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String         @default("US")
+  status       LocationStatus @default(ACTIVE)
+  address      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
-  organization    Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization    Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   locationMembers LocationMembership[]
+  kitchenStations KitchenStation[]
+  menuOverrides   LocationMenuOverride[]
+  diningAreas     DiningArea[]
+  tables          Table[]
+  tableSessions   TableSession[]
 
   @@unique([organizationId, code])
   @@index([organizationId])
@@ -108,6 +135,7 @@ model User {
   memberships   OrganizationMembership[]
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
+  tableSessions TableSession[]
 
   @@map("users")
 }
@@ -124,9 +152,9 @@ model OrganizationMembership {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  role               Role                 @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role                Role                 @relation(fields: [roleId], references: [id], onDelete: Restrict)
   locationMemberships LocationMembership[]
 
   @@unique([userId, organizationId])
@@ -207,16 +235,16 @@ model RolePermission {
 
 /// Refresh token for JWT rotation. NOT tenant-scoped; secured by tokenHash.
 model RefreshToken {
-  id               String    @id @default(uuid())
-  userId           String
-  tokenHash        String    @unique
-  family           String
-  expiresAt        DateTime
-  revokedAt        DateTime?
+  id                String    @id @default(uuid())
+  userId            String
+  tokenHash         String    @unique
+  family            String
+  expiresAt         DateTime
+  revokedAt         DateTime?
   replacedByTokenId String?
-  userAgent        String?
-  ipAddress        String?
-  createdAt        DateTime  @default(now())
+  userAgent         String?
+  ipAddress         String?
+  createdAt         DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -246,4 +274,291 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([actorId])
   @@map("audit_logs")
+}
+
+// ─── Phase 2 — Module 1: Restaurant Configuration & Menu Domain ───────────────
+
+/// Represents a distinct food or beverage preparation station in a restaurant kitchen.
+model KitchenStation {
+  id             String      @id @default(uuid())
+  organizationId String
+  locationId     String
+  name           String
+  code           String
+  type           StationType @default(KITCHEN)
+  isExpo         Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  menuItems    MenuItem[]
+
+  @@unique([locationId, code])
+  @@index([organizationId])
+  @@map("kitchen_stations")
+}
+
+/// Represents tax policies configured for an organization and assigned to items.
+model TaxRate {
+  id              String   @id @default(uuid())
+  organizationId  String
+  name            String
+  rateBasisPoints Int      // e.g. 825 = 8.25%
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  menuItems    MenuItem[]
+
+  @@index([organizationId])
+  @@map("tax_rates")
+}
+
+/// Represents a full menu offering (e.g. Dinner Menu, Lunch, Happy Hour).
+model Menu {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  isActive       Boolean  @default(true)
+  schedule       Json?    // e.g. {"days": [1,2,3,4,5], "start": "17:00", "end": "22:00"}
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categories   MenuCategory[]
+
+  @@index([organizationId])
+  @@map("menus")
+}
+
+/// Represents a group of menu items (e.g. Appetizers, Steaks, Wines).
+model MenuCategory {
+  id             String   @id @default(uuid())
+  organizationId String
+  menuId         String
+  name           String
+  description    String?
+  sortOrder      Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  menu         Menu         @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  items        MenuItem[]
+
+  @@index([organizationId])
+  @@index([menuId, sortOrder])
+  @@map("menu_categories")
+}
+
+/// Represents an individual dish or beverage on the menu.
+model MenuItem {
+  id               String   @id @default(uuid())
+  organizationId   String
+  categoryId       String
+  kitchenStationId String?
+  taxRateId        String?
+  name             String
+  description      String?
+  sku              String?
+  basePriceCents   Int      // Price in integer cents
+  isAvailable      Boolean  @default(true) // 86 stock status
+  prepTimeMinutes  Int      @default(15)
+  calories         Int?
+  allergens        String[] @default([])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category       MenuCategory            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  kitchenStation KitchenStation?         @relation(fields: [kitchenStationId], references: [id], onDelete: SetNull)
+  taxRate        TaxRate?                @relation(fields: [taxRateId], references: [id], onDelete: SetNull)
+  modifierGroups MenuItemModifierGroup[]
+  overrides      LocationMenuOverride[]
+
+  @@index([organizationId])
+  @@index([categoryId])
+  @@map("menu_items")
+}
+
+/// Represents a group of customizable options (e.g. Meat Temperature, Salad Dressing).
+model ModifierGroup {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  minSelections  Int      @default(0)
+  maxSelections  Int      @default(1)
+  isRequired     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  options      ModifierOption[]
+  menuItems    MenuItemModifierGroup[]
+
+  @@index([organizationId])
+  @@map("modifier_groups")
+}
+
+/// Links modifier groups to specific menu items with customizable sort ordering.
+model MenuItemModifierGroup {
+  id              String @id @default(uuid())
+  organizationId  String
+  menuItemId      String
+  modifierGroupId String
+  sortOrder       Int    @default(0)
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  modifierGroup ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, modifierGroupId])
+  @@index([organizationId])
+  @@map("menu_item_modifier_groups")
+}
+
+/// Represents an individual option within a modifier group (e.g. Medium Rare, Ranch, Gluten-Free Bun).
+model ModifierOption {
+  id              String   @id @default(uuid())
+  organizationId  String
+  modifierGroupId String
+  name            String
+  priceDeltaCents Int      @default(0) // Additional or discounted cost in cents
+  isAvailable     Boolean  @default(true)
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  modifierGroup ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([modifierGroupId])
+  @@map("modifier_options")
+}
+
+/// Represents location-specific overrides for pricing or 86 availability.
+model LocationMenuOverride {
+  id                 String   @id @default(uuid())
+  organizationId     String
+  locationId         String
+  menuItemId         String
+  overridePriceCents Int?
+  isAvailable        Boolean? // Location-level 86 status
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, menuItemId])
+  @@index([organizationId])
+  @@map("location_menu_overrides")
+}
+
+// ─── FoH Floor Plan & Table Management Models ───────────────────────────────
+
+enum TableShape {
+  RECTANGLE
+  ROUND
+  SQUARE
+  BOOTH
+  BAR_STOOL
+}
+
+enum TableStatus {
+  AVAILABLE
+  SEATED
+  ORDERED
+  SERVED
+  PAYMENT_PENDING
+  DIRTY
+  RESERVED
+  BLOCKED
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  TRANSFERRED
+}
+
+/// A physical section or dining room within a location. Tenant-scoped.
+model DiningArea {
+  id             String   @id @default(uuid())
+  organizationId String
+  locationId     String
+  name           String   // e.g. "Main Dining Room", "Patio", "Bar"
+  sortOrder      Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  tables       Table[]
+
+  @@unique([locationId, name])
+  @@index([organizationId])
+  @@map("dining_areas")
+}
+
+/// A physical table or seating unit on the visual floor plan. Tenant-scoped.
+model Table {
+  id             String      @id @default(uuid())
+  organizationId String
+  locationId     String
+  diningAreaId   String
+  tableNumber    String
+  shape          TableShape  @default(RECTANGLE)
+  minCovers      Int         @default(1)
+  maxCovers      Int         @default(4)
+  posX           Float       @default(0) // Visual 2D X coordinate
+  posY           Float       @default(0) // Visual 2D Y coordinate
+  width          Float       @default(100)
+  height         Float       @default(100)
+  rotation       Float       @default(0)
+  status         TableStatus @default(AVAILABLE)
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  diningArea   DiningArea     @relation(fields: [diningAreaId], references: [id], onDelete: Cascade)
+  sessions     TableSession[]
+
+  @@unique([locationId, tableNumber])
+  @@index([organizationId])
+  @@index([locationId, status])
+  @@map("tables")
+}
+
+/// An active or historical seating session at a table. Tenant-scoped.
+model TableSession {
+  id             String        @id @default(uuid())
+  organizationId String
+  locationId     String
+  tableId        String
+  serverUserId   String?
+  guestCount     Int           @default(2)
+  seatedAt       DateTime      @default(now())
+  closedAt       DateTime?
+  status         SessionStatus @default(ACTIVE)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  table        Table        @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  server       User?        @relation(fields: [serverUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([locationId, status])
+  @@map("table_sessions")
 }

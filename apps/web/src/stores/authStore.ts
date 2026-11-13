@@ -32,6 +32,21 @@ const ACCESS_TOKEN_KEY = "apollo_access_token";
 const REFRESH_TOKEN_KEY = "apollo_refresh_token";
 const CURRENT_ORG_KEY = "apollo_current_org_id";
 
+/**
+ * Safely parses response body as JSON without throwing on empty or malformed input.
+ */
+async function parseJsonResponse<T>(response: Response): Promise<T | null> {
+  try {
+    const text = await response.text();
+    if (!text || !text.trim()) {
+      return null;
+    }
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: localStorage.getItem(ACCESS_TOKEN_KEY),
@@ -58,14 +73,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: JSON.stringify(credentials),
       });
 
-      const body = (await response.json()) as
-        ApiSuccessResponse<AuthResponse> | ApiErrorResponse;
+      const body = await parseJsonResponse<
+        ApiSuccessResponse<AuthResponse> | ApiErrorResponse
+      >(response);
 
-      if (!response.ok || !body.success) {
+      if (!response.ok || !body || !body.success) {
         const errorMsg =
-          !body.success && body.error?.message
+          body && !body.success && body.error?.message
             ? body.error.message
-            : "Authentication failed";
+            : !response.ok
+              ? `Authentication failed (${response.status} ${response.statusText || "Error"})`
+              : "Invalid server response";
         throw new Error(errorMsg);
       }
 
@@ -107,14 +125,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: JSON.stringify(payload),
       });
 
-      const body = (await response.json()) as
-        ApiSuccessResponse<AuthResponse> | ApiErrorResponse;
+      const body = await parseJsonResponse<
+        ApiSuccessResponse<AuthResponse> | ApiErrorResponse
+      >(response);
 
-      if (!response.ok || !body.success) {
+      if (!response.ok || !body || !body.success) {
         const errorMsg =
-          !body.success && body.error?.message
+          body && !body.success && body.error?.message
             ? body.error.message
-            : "Registration failed";
+            : !response.ok
+              ? `Registration failed (${response.status} ${response.statusText || "Error"})`
+              : "Invalid server response";
         throw new Error(errorMsg);
       }
 
@@ -196,8 +217,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw new Error("Session expired");
       }
 
-      const body = await response.json();
-      if (!body.success) throw new Error("Invalid response");
+      const body = await parseJsonResponse<ApiSuccessResponse<any>>(response);
+      if (!body || !body.success) throw new Error("Invalid response");
 
       const savedOrgId = localStorage.getItem(CURRENT_ORG_KEY);
       const activeOrgId =

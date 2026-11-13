@@ -11,7 +11,27 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": { target: "http://localhost:3001", changeOrigin: true },
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("error", (_err, _req, res) => {
+            if ("writeHead" in res && !res.headersSent) {
+              res.writeHead(503, { "Content-Type": "application/json" });
+              res.end(
+                JSON.stringify({
+                  success: false,
+                  error: {
+                    code: "GATEWAY_UNAVAILABLE",
+                    message:
+                      "Apollo API service is unreachable. Please ensure the backend server is running on port 3001.",
+                  },
+                }),
+              );
+            }
+          });
+        },
+      },
       "/socket.io": { target: "http://localhost:3001", ws: true },
     },
   },

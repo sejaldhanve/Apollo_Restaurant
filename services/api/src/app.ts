@@ -16,7 +16,22 @@ export function createApp(): express.Application {
 
   // Security
   app.use(helmet());
-  app.use(cors({ origin: env.API_CORS_ORIGIN, credentials: true }));
+  const isDev = env.NODE_ENV === "development";
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (
+          origin === env.API_CORS_ORIGIN ||
+          (isDev && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))
+        ) {
+          return callback(null, true);
+        }
+        return callback(new Error("Not allowed by CORS"));
+      },
+      credentials: true,
+    }),
+  );
 
   // Parsing
   app.use(express.json({ limit: "1mb" }));
