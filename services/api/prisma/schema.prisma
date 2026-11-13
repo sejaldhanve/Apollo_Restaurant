@@ -81,6 +81,10 @@ model Organization {
   diningAreas            DiningArea[]
   tables                 Table[]
   tableSessions          TableSession[]
+  orders                 Order[]
+  orderItems             OrderItem[]
+  orderItemModifiers     OrderItemModifier[]
+  payments               Payment[]
 
   @@map("organizations")
 }
@@ -111,6 +115,8 @@ model Location {
   diningAreas     DiningArea[]
   tables          Table[]
   tableSessions   TableSession[]
+  orders          Order[]
+  payments        Payment[]
 
   @@unique([organizationId, code])
   @@index([organizationId])
@@ -132,10 +138,13 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  memberships   OrganizationMembership[]
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
-  tableSessions TableSession[]
+  memberships         OrganizationMembership[]
+  refreshTokens       RefreshToken[]
+  auditLogs           AuditLog[]
+  tableSessions       TableSession[]
+  assignedDiningAreas DiningArea[]             @relation("DiningAreaServer")
+  assignedTables      Table[]                  @relation("TableServer")
+  orders              Order[]                  @relation("OrderServer")
 
   @@map("users")
 }
@@ -293,6 +302,7 @@ model KitchenStation {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
   menuItems    MenuItem[]
+  orderItems   OrderItem[]
 
   @@unique([locationId, code])
   @@index([organizationId])
@@ -379,6 +389,7 @@ model MenuItem {
   taxRate        TaxRate?                @relation(fields: [taxRateId], references: [id], onDelete: SetNull)
   modifierGroups MenuItemModifierGroup[]
   overrides      LocationMenuOverride[]
+  orderItems     OrderItem[]
 
   @@index([organizationId])
   @@index([categoryId])
@@ -399,6 +410,7 @@ model ModifierGroup {
   organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   options      ModifierOption[]
   menuItems    MenuItemModifierGroup[]
+  orderItemModifiers OrderItemModifier[]
 
   @@index([organizationId])
   @@map("modifier_groups")
@@ -435,6 +447,7 @@ model ModifierOption {
 
   organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   modifierGroup ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  orderItemModifiers OrderItemModifier[]
 
   @@index([organizationId])
   @@index([modifierGroupId])
@@ -494,17 +507,20 @@ model DiningArea {
   organizationId String
   locationId     String
   name           String   // e.g. "Main Dining Room", "Patio", "Bar"
-  sortOrder      Int      @default(0)
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  sortOrder        Int      @default(0)
+  isActive         Boolean  @default(true)
+  assignedServerId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  tables       Table[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  assignedServer User?        @relation("DiningAreaServer", fields: [assignedServerId], references: [id], onDelete: SetNull)
+  tables         Table[]
 
   @@unique([locationId, name])
   @@index([organizationId])
+  @@index([assignedServerId])
   @@map("dining_areas")
 }
 
@@ -523,19 +539,23 @@ model Table {
   width          Float       @default(100)
   height         Float       @default(100)
   rotation       Float       @default(0)
-  status         TableStatus @default(AVAILABLE)
-  isActive       Boolean     @default(true)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  status           TableStatus @default(AVAILABLE)
+  isActive         Boolean     @default(true)
+  assignedServerId String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
-  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  location     Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  diningArea   DiningArea     @relation(fields: [diningAreaId], references: [id], onDelete: Cascade)
-  sessions     TableSession[]
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  diningArea     DiningArea     @relation(fields: [diningAreaId], references: [id], onDelete: Cascade)
+  assignedServer User?          @relation("TableServer", fields: [assignedServerId], references: [id], onDelete: SetNull)
+  sessions       TableSession[]
+  orders         Order[]
 
   @@unique([locationId, tableNumber])
   @@index([organizationId])
   @@index([locationId, status])
+  @@index([assignedServerId])
   @@map("tables")
 }
 
@@ -557,8 +577,155 @@ model TableSession {
   location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
   table        Table        @relation(fields: [tableId], references: [id], onDelete: Cascade)
   server       User?        @relation(fields: [serverUserId], references: [id], onDelete: SetNull)
+  orders       Order[]
 
   @@index([organizationId])
   @@index([locationId, status])
   @@map("table_sessions")
 }
+
+// ─── Phase 2 — Module 4: POS & Order Management Domain ───────────────────────
+
+enum OrderStatus {
+  DRAFT
+  SUBMITTED
+  IN_PREPARATION
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum OrderItemStatus {
+  PENDING
+  IN_PREPARATION
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+}
+
+/// A dining table or takeout order. Tenant-scoped.
+model Order {
+  id             String        @id @default(uuid())
+  organizationId String
+  locationId     String
+  tableId        String?
+  tableSessionId String?
+  serverUserId   String?
+  orderNumber    String        // e.g. "ORD-101"
+  status         OrderStatus   @default(DRAFT)
+  paymentStatus  PaymentStatus @default(UNPAID)
+  subtotalCents  Int           @default(0)
+  taxCents       Int           @default(0)
+  totalCents     Int           @default(0)
+  currency       String        @default("USD")
+  guestCount     Int           @default(1)
+  notes          String?
+  idempotencyKey String?
+  submittedAt    DateTime?
+  preparedAt     DateTime?
+  servedAt       DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  table        Table?        @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  tableSession TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
+  server       User?         @relation("OrderServer", fields: [serverUserId], references: [id], onDelete: SetNull)
+  items        OrderItem[]
+  payments     Payment[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId])
+  @@index([locationId, status])
+  @@index([tableId])
+  @@index([tableSessionId])
+  @@index([serverUserId])
+  @@map("orders")
+}
+
+/// An individual line item on an order with snapshotted prices. Tenant-scoped.
+model OrderItem {
+  id                  String          @id @default(uuid())
+  organizationId      String
+  orderId             String
+  menuItemId          String
+  kitchenStationId    String?
+  name                String          // Snapshot of item name at order time
+  basePriceCents      Int             // Snapshot of item price in integer cents
+  quantity            Int             @default(1)
+  subtotalCents       Int             // (basePrice + modifiers) * quantity
+  taxRateBasisPoints  Int             @default(0)
+  taxCents            Int             @default(0)
+  totalCents          Int             // subtotal + tax
+  status              OrderItemStatus @default(PENDING)
+  specialInstructions String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem       MenuItem            @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  kitchenStation KitchenStation?     @relation(fields: [kitchenStationId], references: [id], onDelete: SetNull)
+  modifiers      OrderItemModifier[]
+
+  @@index([organizationId])
+  @@index([orderId])
+  @@index([kitchenStationId, status])
+  @@map("order_items")
+}
+
+/// Modifiers applied to an order line item. Tenant-scoped.
+model OrderItemModifier {
+  id              String   @id @default(uuid())
+  organizationId  String
+  orderItemId     String
+  modifierGroupId String?
+  modifierOptionId String?
+  groupName       String   // Snapshot of modifier group name
+  optionName      String   // Snapshot of option name
+  priceDeltaCents Int      @default(0) // Snapshot of price delta
+  createdAt       DateTime @default(now())
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orderItem      OrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  modifierGroup  ModifierGroup?  @relation(fields: [modifierGroupId], references: [id], onDelete: SetNull)
+  modifierOption ModifierOption? @relation(fields: [modifierOptionId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([orderItemId])
+  @@map("order_item_modifiers")
+}
+
+/// Payment record foundation for POS check settlement. Tenant-scoped.
+model Payment {
+  id             String        @id @default(uuid())
+  organizationId String
+  locationId     String
+  orderId        String
+  amountCents    Int
+  currency       String        @default("USD")
+  status         PaymentStatus @default(UNPAID)
+  paymentMethod  String?       // "CASH", "CARD", etc.
+  referenceId    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([orderId])
+  @@map("payments")
+}
+

@@ -6,6 +6,7 @@ import type {
   TableDto,
   TableShape,
   TableStatus,
+  StaffMemberDto,
 } from "@apollo/shared-types";
 import {
   Grid3X3,
@@ -18,6 +19,8 @@ import {
   Layers,
   ArrowRightLeft,
   Sparkles,
+  UserCheck,
+  User,
 } from "lucide-react";
 
 export function FloorPlanPage() {
@@ -27,6 +30,7 @@ export function FloorPlanPage() {
   const [locationId, setLocationId] = useState<string>("");
   const [diningAreas, setDiningAreas] = useState<DiningAreaDto[]>([]);
   const [tables, setTables] = useState<TableDto[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMemberDto[]>([]);
   const [activeAreaId, setActiveAreaId] = useState<string>("");
   const [selectedTable, setSelectedTable] = useState<TableDto | null>(null);
   const [designerMode, setDesignerMode] = useState<boolean>(false);
@@ -42,11 +46,14 @@ export function FloorPlanPage() {
 
   // Form states
   const [newAreaName, setNewAreaName] = useState<string>("");
+  const [newAreaServerId, setNewAreaServerId] = useState<string>("");
   const [newTableNumber, setNewTableNumber] = useState<string>("");
+  const [newTableServerId, setNewTableServerId] = useState<string>("");
   const [newTableShape, setNewTableShape] = useState<TableShape>("RECTANGLE");
   const [newMinCovers, setNewMinCovers] = useState<number>(2);
   const [newMaxCovers, setNewMaxCovers] = useState<number>(4);
   const [seatGuestCount, setSeatGuestCount] = useState<number>(2);
+  const [seatServerUserId, setSeatServerUserId] = useState<string>("");
   const [transferTargetTableId, setTransferTargetTableId] = useState<string>("");
 
   // Dragging state in Designer Mode
@@ -69,6 +76,15 @@ export function FloorPlanPage() {
       setLocationId(res.locationId);
       setDiningAreas(res.diningAreas);
       setTables(res.tables);
+
+      try {
+        const staffRes = await apiClient.get<StaffMemberDto[]>("/api/v1/foh/staff");
+        if (Array.isArray(staffRes)) {
+          setStaffMembers(staffRes);
+        }
+      } catch {
+        // Staff listing optional if restricted
+      }
 
       if (res.diningAreas.length > 0) {
         if (!activeAreaId || !res.diningAreas.some((a) => a.id === activeAreaId)) {
@@ -100,12 +116,54 @@ export function FloorPlanPage() {
         locationId: locationId || "00000000-0000-0000-0000-000000000000",
         name: newAreaName.trim(),
         sortOrder: diningAreas.length,
+        assignedServerId: newAreaServerId || undefined,
       });
       setShowAreaModal(false);
       setNewAreaName("");
+      setNewAreaServerId("");
       await loadFloorPlan();
     } catch (err: any) {
       setError(err.message || "Failed to create dining area");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Section Server Assignment Handler
+  const handleAssignSectionServer = async (areaId: string, serverUserId: string | null) => {
+    setIsSubmitting(true);
+    try {
+      await apiClient.patch(`/api/v1/foh/dining-areas/${areaId}/server`, { serverUserId });
+      await loadFloorPlan();
+    } catch (err: any) {
+      setError(err.message || "Failed to assign server to section");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Table Server Assignment Handler
+  const handleAssignTableServer = async (tableId: string, serverUserId: string | null) => {
+    setIsSubmitting(true);
+    try {
+      await apiClient.patch(`/api/v1/foh/tables/${tableId}/server`, { serverUserId });
+      await loadFloorPlan();
+      if (selectedTable && selectedTable.id === tableId) {
+        const updatedStaff = staffMembers.find((s) => s.id === serverUserId);
+        setSelectedTable((prev) =>
+          prev
+            ? {
+                ...prev,
+                assignedServerId: serverUserId,
+                assignedServerName: updatedStaff
+                  ? `${updatedStaff.firstName} ${updatedStaff.lastName}`.trim()
+                  : null,
+              }
+            : null,
+        );
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to assign server to table");
     } finally {
       setIsSubmitting(false);
     }
@@ -170,11 +228,13 @@ export function FloorPlanPage() {
         maxCovers: newMaxCovers,
         posX: 100 + (tables.length % 5) * 30,
         posY: 100 + Math.floor(tables.length / 5) * 30,
+        assignedServerId: newTableServerId || undefined,
         ...defaultDimensions,
       });
 
       setShowTableModal(false);
       setNewTableNumber("");
+      setNewTableServerId("");
       await loadFloorPlan();
     } catch (err: any) {
       setError(err.message || "Failed to create table");
@@ -191,6 +251,7 @@ export function FloorPlanPage() {
     try {
       await apiClient.post(`/api/v1/foh/tables/${selectedTable.id}/seat`, {
         guestCount: seatGuestCount,
+        serverUserId: seatServerUserId || undefined,
       });
       setSelectedTable(null);
       await loadFloorPlan();
@@ -294,7 +355,8 @@ export function FloorPlanPage() {
     setDraggingTableId(null);
   };
 
-  // Filter tables by active dining area
+  // Active dining area and filtered tables
+  const activeArea = diningAreas.find((a) => a.id === activeAreaId);
   const areaTables = tables.filter((t) => t.diningAreaId === activeAreaId);
 
   // Status Styling Configuration
@@ -507,15 +569,15 @@ export function FloorPlanPage() {
         </div>
       </div>
 
-      {/* Dining Area Tabs */}
+      {/* Dining Area Tabs & Section Server Assignment */}
       {diningAreas.length > 0 && (
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-200 pb-2 sm:pb-0">
+          <nav className="-mb-px flex space-x-6 overflow-x-auto">
             {diningAreas.map((area) => (
               <button
                 key={area.id}
                 onClick={() => setActiveAreaId(area.id)}
-                className={`flex items-center space-x-2 border-b-2 py-3 px-1 text-sm font-semibold transition ${
+                className={`flex items-center space-x-2 border-b-2 py-3 px-1 text-sm font-semibold transition shrink-0 ${
                   activeAreaId === area.id
                     ? "border-indigo-600 text-indigo-600"
                     : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
@@ -525,9 +587,34 @@ export function FloorPlanPage() {
                 <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
                   {tables.filter((t) => t.diningAreaId === area.id).length}
                 </span>
+                {area.assignedServerName && (
+                  <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-2xs font-bold text-indigo-700 border border-indigo-200">
+                    {area.assignedServerName.split(" ")[0]}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
+
+          {activeArea && (
+            <div className="mb-2 sm:mb-0 flex items-center space-x-2 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-1.5 text-xs">
+              <UserCheck className="h-4 w-4 text-indigo-600 shrink-0" />
+              <span className="font-semibold text-gray-700 whitespace-nowrap">Section Server:</span>
+              <select
+                value={activeArea.assignedServerId || ""}
+                onChange={(e) => handleAssignSectionServer(activeArea.id, e.target.value || null)}
+                disabled={isSubmitting}
+                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-800 shadow-2xs focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Unassigned</option>
+                {staffMembers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.firstName} {s.lastName} ({s.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
@@ -608,7 +695,12 @@ export function FloorPlanPage() {
                     key={table.id}
                     onMouseDown={(e) => handleMouseDown(e, table)}
                     onClick={() => {
-                      if (!designerMode) setSelectedTable(table);
+                      if (!designerMode) {
+                        setSelectedTable(table);
+                        const area = diningAreas.find((a) => a.id === table.diningAreaId);
+                        setSeatServerUserId(table.assignedServerId || area?.assignedServerId || "");
+                        setSeatGuestCount(table.minCovers || 2);
+                      }
                     }}
                     style={{
                       left: `${table.posX}px`,
@@ -635,7 +727,7 @@ export function FloorPlanPage() {
                       </span>
                     </div>
 
-                    {/* Active Party Info */}
+                    {/* Active Party Info or Assigned Server */}
                     {table.activeSession ? (
                       <div className="mt-1 flex items-center space-x-1 text-2xs font-semibold text-indigo-900">
                         <Users className="h-3 w-3" />
@@ -645,6 +737,11 @@ export function FloorPlanPage() {
                             • {table.activeSession.serverName.split(" ")[0]}
                           </span>
                         )}
+                      </div>
+                    ) : table.assignedServerName ? (
+                      <div className="mt-1 flex items-center space-x-1 text-2xs font-medium text-indigo-700">
+                        <User className="h-3 w-3 shrink-0" />
+                        <span className="truncate max-w-[65px]">{table.assignedServerName.split(" ")[0]}</span>
                       </div>
                     ) : (
                       <span className="mt-1 text-2xs font-medium text-gray-400">
@@ -681,6 +778,40 @@ export function FloorPlanPage() {
               </span>
             </div>
 
+            {/* TABLE SERVER ASSIGNMENT CONTROL */}
+            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-1.5">
+                  <UserCheck className="h-4 w-4 text-indigo-600" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Dedicated Server
+                  </span>
+                </div>
+                {selectedTable.assignedServerName && (
+                  <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-2xs font-bold text-indigo-700 border border-indigo-200">
+                    {selectedTable.assignedServerName}
+                  </span>
+                )}
+              </div>
+              <select
+                value={selectedTable.assignedServerId || ""}
+                onChange={(e) => handleAssignTableServer(selectedTable.id, e.target.value || null)}
+                disabled={isSubmitting}
+                className="w-full rounded-lg border border-gray-300 bg-white p-2 text-xs font-medium text-gray-800 shadow-2xs focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">
+                  {diningAreas.find((a) => a.id === selectedTable.diningAreaId)?.assignedServerName
+                    ? `Inherit from Section (${diningAreas.find((a) => a.id === selectedTable.diningAreaId)?.assignedServerName})`
+                    : "Unassigned (No dedicated server)"}
+                </option>
+                {staffMembers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.firstName} {s.lastName} ({s.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* SEATING FORM (When Available) */}
             {selectedTable.status === "AVAILABLE" && (
               <form onSubmit={handleSeatParty} className="mt-5 space-y-4">
@@ -702,6 +833,24 @@ export function FloorPlanPage() {
                       Recommended: {selectedTable.minCovers}–{selectedTable.maxCovers} covers
                     </span>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Assigned Server for Party
+                  </label>
+                  <select
+                    value={seatServerUserId}
+                    onChange={(e) => setSeatServerUserId(e.target.value)}
+                    className="mt-1.5 w-full rounded-lg border border-gray-300 p-2 text-xs font-medium focus:border-indigo-500 focus:outline-none"
+                  >
+                    <option value="">Default (Assigned Server or Current User)</option>
+                    {staffMembers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.firstName} {s.lastName} ({s.role})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="pt-2">
@@ -893,6 +1042,22 @@ export function FloorPlanPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Assign Section Server (Optional)</label>
+                <select
+                  value={newAreaServerId}
+                  onChange={(e) => setNewAreaServerId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-indigo-500 focus:outline-none"
+                >
+                  <option value="">No server assigned</option>
+                  {staffMembers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.firstName} {s.lastName} ({s.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
@@ -973,6 +1138,22 @@ export function FloorPlanPage() {
                     className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-indigo-500 focus:outline-none"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Assign Dedicated Server (Optional)</label>
+                <select
+                  value={newTableServerId}
+                  onChange={(e) => setNewTableServerId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-indigo-500 focus:outline-none"
+                >
+                  <option value="">Inherit from section / unassigned</option>
+                  {staffMembers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.firstName} {s.lastName} ({s.role})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="mt-6 flex justify-end space-x-3">

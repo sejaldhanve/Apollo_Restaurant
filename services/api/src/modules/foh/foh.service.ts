@@ -44,12 +44,20 @@ export class FoHService {
 
       const diningAreas = await tx.diningArea.findMany({
         where: { organizationId: orgId, locationId: effectiveLocationId },
+        include: {
+          assignedServer: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
         orderBy: { sortOrder: "asc" },
       });
 
       const tables = await tx.table.findMany({
         where: { organizationId: orgId, locationId: effectiveLocationId, isActive: true },
         include: {
+          assignedServer: {
+            select: { id: true, firstName: true, lastName: true },
+          },
           sessions: {
             where: { status: "ACTIVE" },
             include: {
@@ -82,6 +90,10 @@ export class FoHService {
           rotation: t.rotation,
           status: t.status,
           isActive: t.isActive,
+          assignedServerId: t.assignedServerId ?? null,
+          assignedServerName: t.assignedServer
+            ? `${t.assignedServer.firstName} ${t.assignedServer.lastName}`.trim()
+            : null,
           activeSession: activeSession
             ? {
                 id: activeSession.id,
@@ -114,6 +126,10 @@ export class FoHService {
           name: a.name,
           sortOrder: a.sortOrder,
           isActive: a.isActive,
+          assignedServerId: a.assignedServerId ?? null,
+          assignedServerName: a.assignedServer
+            ? `${a.assignedServer.firstName} ${a.assignedServer.lastName}`.trim()
+            : null,
           createdAt: a.createdAt.toISOString(),
           updatedAt: a.updatedAt.toISOString(),
         })),
@@ -166,6 +182,7 @@ export class FoHService {
           locationId: location.id,
           name: input.name,
           sortOrder: input.sortOrder ?? 0,
+          assignedServerId: input.assignedServerId ?? null,
         },
       });
 
@@ -219,6 +236,7 @@ export class FoHService {
           ...(input.name !== undefined ? { name: input.name } : {}),
           ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
           ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+          ...(input.assignedServerId !== undefined ? { assignedServerId: input.assignedServerId } : {}),
         },
       });
 
@@ -280,6 +298,7 @@ export class FoHService {
           height: input.height ?? 100,
           rotation: input.rotation ?? 0,
           status: "AVAILABLE",
+          assignedServerId: input.assignedServerId ?? null,
         },
       });
 
@@ -345,6 +364,7 @@ export class FoHService {
           ...(input.height !== undefined ? { height: input.height } : {}),
           ...(input.rotation !== undefined ? { rotation: input.rotation } : {}),
           ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+          ...(input.assignedServerId !== undefined ? { assignedServerId: input.assignedServerId } : {}),
         },
       });
 
@@ -421,6 +441,7 @@ export class FoHService {
     return withTenantContext(orgId, async (tx) => {
       const table = await tx.table.findFirst({
         where: { id: tableId, organizationId: orgId },
+        include: { diningArea: true },
       });
       if (!table) {
         throw AppError.notFound("Table not found");
@@ -438,7 +459,11 @@ export class FoHService {
         throw AppError.conflict("Table is already occupied by an active session");
       }
 
-      const serverId = input.serverUserId || actorId;
+      const serverId =
+        input.serverUserId ||
+        table.assignedServerId ||
+        table.diningArea?.assignedServerId ||
+        actorId;
 
       const session = await tx.tableSession.create({
         data: {
@@ -671,6 +696,155 @@ export class FoHService {
       }
 
       throw AppError.badRequest("Invalid transfer parameters");
+    });
+  }
+
+  // ─── Staff & Server Assignments ──────────────────────────────────────────
+
+  static async getStaffMembers(orgId: string) {
+    return withTenantContext(orgId, async (tx) => {
+      const memberships = await tx.organizationMembership.findMany({
+        where: { organizationId: orgId, status: "ACTIVE" },
+        include: {
+          user: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+          role: {
+            select: { name: true },
+          },
+        },
+        orderBy: { user: { firstName: "asc" } },
+      });
+
+      return memberships.map((m) => ({
+        id: m.user.id,
+        firstName: m.user.firstName,
+        lastName: m.user.lastName,
+        email: m.user.email,
+        role: m.role.name,
+      }));
+    });
+  }
+
+  static async assignSectionServer(
+    orgId: string,
+    actorId: string,
+    areaId: string,
+    serverUserId: string | null,
+    clientInfo?: { ip?: string; requestId?: string },
+  ) {
+    return withTenantContext(orgId, async (tx) => {
+      const area = await tx.diningArea.findFirst({
+        where: { id: areaId, organizationId: orgId },
+      });
+      if (!area) {
+        throw AppError.notFound("Dining area not found");
+      }
+
+      if (serverUserId) {
+        const staff = await tx.organizationMembership.findFirst({
+          where: { organizationId: orgId, userId: serverUserId, status: "ACTIVE" },
+        });
+        if (!staff) {
+          throw AppError.badRequest("Selected server is not an active member of this organization");
+        }
+      }
+
+      const updated = await tx.diningArea.update({
+        where: { id: areaId },
+        data: { assignedServerId: serverUserId },
+        include: {
+          assignedServer: { select: { id: true, firstName: true, lastName: true } },
+        },
+      });
+
+      await AuditService.log(
+        {
+          action: "dining_area:server_assigned",
+          organizationId: orgId,
+          actorId,
+          entityType: "DiningArea",
+          entityId: areaId,
+          metadata: { assignedServerId: serverUserId },
+          ipAddress: clientInfo?.ip,
+          requestId: clientInfo?.requestId,
+        },
+        tx,
+      );
+
+      return {
+        id: updated.id,
+        name: updated.name,
+        assignedServerId: updated.assignedServerId,
+        assignedServerName: updated.assignedServer
+          ? `${updated.assignedServer.firstName} ${updated.assignedServer.lastName}`.trim()
+          : null,
+      };
+    });
+  }
+
+  static async assignTableServer(
+    orgId: string,
+    actorId: string,
+    tableId: string,
+    serverUserId: string | null,
+    clientInfo?: { ip?: string; requestId?: string },
+  ) {
+    return withTenantContext(orgId, async (tx) => {
+      const table = await tx.table.findFirst({
+        where: { id: tableId, organizationId: orgId },
+      });
+      if (!table) {
+        throw AppError.notFound("Table not found");
+      }
+
+      if (serverUserId) {
+        const staff = await tx.organizationMembership.findFirst({
+          where: { organizationId: orgId, userId: serverUserId, status: "ACTIVE" },
+        });
+        if (!staff) {
+          throw AppError.badRequest("Selected server is not an active member of this organization");
+        }
+      }
+
+      const updated = await tx.table.update({
+        where: { id: tableId },
+        data: { assignedServerId: serverUserId },
+        include: {
+          assignedServer: { select: { id: true, firstName: true, lastName: true } },
+        },
+      });
+
+      // If table has an active session and a new server is assigned, update active session's server too
+      if (serverUserId) {
+        await tx.tableSession.updateMany({
+          where: { tableId, organizationId: orgId, status: "ACTIVE" },
+          data: { serverUserId },
+        });
+      }
+
+      await AuditService.log(
+        {
+          action: "table:server_assigned",
+          organizationId: orgId,
+          actorId,
+          entityType: "Table",
+          entityId: tableId,
+          metadata: { assignedServerId: serverUserId },
+          ipAddress: clientInfo?.ip,
+          requestId: clientInfo?.requestId,
+        },
+        tx,
+      );
+
+      return {
+        id: updated.id,
+        tableNumber: updated.tableNumber,
+        assignedServerId: updated.assignedServerId,
+        assignedServerName: updated.assignedServer
+          ? `${updated.assignedServer.firstName} ${updated.assignedServer.lastName}`.trim()
+          : null,
+      };
     });
   }
 }

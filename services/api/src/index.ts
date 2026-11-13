@@ -5,6 +5,7 @@ import { initRedis, closeRedis } from "./config/redis.js";
 import { initRateLimiters } from "./middleware/rate-limiter.js";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
+import { setSocketIO, registerSocketHandlers } from "./services/socket.service.js";
 
 async function bootstrap(): Promise<void> {
   // Ensure Redis connects successfully before rate limiters use it
@@ -17,13 +18,8 @@ async function bootstrap(): Promise<void> {
   const io = new SocketIOServer(httpServer, {
     cors: { origin: env.API_CORS_ORIGIN, methods: ["GET", "POST"] },
   });
-
-  io.on("connection", (socket) => {
-    logger.info({ socketId: socket.id }, "Client connected");
-    socket.on("disconnect", () => {
-      logger.info({ socketId: socket.id }, "Client disconnected");
-    });
-  });
+  setSocketIO(io);
+  registerSocketHandlers(io);
 
   httpServer.listen(env.API_PORT, env.API_HOST, () => {
     logger.info(

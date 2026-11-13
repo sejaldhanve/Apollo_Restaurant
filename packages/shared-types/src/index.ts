@@ -355,6 +355,8 @@ export interface DiningAreaDto {
   name: string;
   sortOrder: number;
   isActive: boolean;
+  assignedServerId?: string | null;
+  assignedServerName?: string | null;
   tables?: TableDto[];
   createdAt: string;
   updatedAt: string;
@@ -391,9 +393,27 @@ export interface TableDto {
   rotation: number;
   status: TableStatus;
   isActive: boolean;
+  assignedServerId?: string | null;
+  assignedServerName?: string | null;
   activeSession?: TableSessionDto | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StaffMemberDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+}
+
+export interface AssignSectionServerRequest {
+  serverUserId: string | null;
+}
+
+export interface AssignTableServerRequest {
+  serverUserId: string | null;
 }
 
 export interface FloorPlanDto {
@@ -467,3 +487,183 @@ export interface TransferTableRequest {
   targetTableId?: string;
   targetServerUserId?: string;
 }
+
+// ─── Phase 2 Module 3: Team & Staff Management ───────────────────────────────
+
+export interface RoleDto {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string | null;
+  isSystem: boolean;
+  scope: string;
+}
+
+export interface LocationSummaryDto {
+  id: string;
+  name: string;
+  code: string;
+  status?: string;
+}
+
+export interface TeamMemberDto {
+  id: string; // membership id
+  userId: string;
+  organizationId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  status: "ACTIVE" | "SUSPENDED" | "INVITED";
+  role: {
+    id: string;
+    name: string;
+    description?: string | null;
+    scope: string;
+  };
+  locations: LocationSummaryDto[];
+  invitedAt: string;
+  joinedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InviteStaffRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  roleId: string;
+  locationIds?: string[];
+  temporaryPassword?: string;
+}
+
+export interface UpdateStaffRoleRequest {
+  roleId: string;
+}
+
+export interface UpdateStaffStatusRequest {
+  status: "ACTIVE" | "SUSPENDED" | "INVITED";
+}
+
+export interface UpdateStaffLocationsRequest {
+  locationIds: string[];
+}
+
+// ─── Phase 2 Module 4: POS & Order Management ────────────────────────────────
+
+export type OrderStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "IN_PREPARATION"
+  | "READY"
+  | "SERVED"
+  | "CANCELLED";
+
+export type OrderItemStatus =
+  | "PENDING"
+  | "IN_PREPARATION"
+  | "READY"
+  | "SERVED"
+  | "CANCELLED";
+
+export type PaymentStatus = "UNPAID" | "PENDING" | "PAID" | "FAILED";
+
+export interface OrderItemModifierDto {
+  id: string;
+  modifierGroupId?: string | null;
+  modifierOptionId?: string | null;
+  groupName: string;
+  optionName: string;
+  priceDeltaCents: number;
+}
+
+export interface OrderItemDto {
+  id: string;
+  orderId: string;
+  menuItemId: string;
+  kitchenStationId?: string | null;
+  kitchenStationName?: string | null;
+  name: string;
+  basePriceCents: number;
+  quantity: number;
+  subtotalCents: number;
+  taxRateBasisPoints: number;
+  taxCents: number;
+  totalCents: number;
+  status: OrderItemStatus;
+  specialInstructions?: string | null;
+  modifiers: OrderItemModifierDto[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderDto {
+  id: string;
+  organizationId: string;
+  locationId: string;
+  tableId?: string | null;
+  tableNumber?: string | null;
+  diningAreaName?: string | null;
+  tableSessionId?: string | null;
+  serverUserId?: string | null;
+  serverName?: string | null;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  subtotalCents: number;
+  taxCents: number;
+  totalCents: number;
+  currency: string;
+  guestCount: number;
+  notes?: string | null;
+  idempotencyKey?: string | null;
+  submittedAt?: string | null;
+  preparedAt?: string | null;
+  servedAt?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
+  items: OrderItemDto[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOrderRequest {
+  locationId: string;
+  tableId?: string;
+  tableSessionId?: string;
+  serverUserId?: string;
+  guestCount?: number;
+  notes?: string;
+}
+
+export interface AddOrderItemRequest {
+  menuItemId: string;
+  quantity?: number;
+  specialInstructions?: string;
+  selectedModifiers?: {
+    modifierGroupId: string;
+    modifierOptionId: string;
+  }[];
+}
+
+export interface UpdateOrderItemRequest {
+  quantity?: number;
+  specialInstructions?: string;
+}
+
+export interface SubmitOrderRequest {
+  idempotencyKey: string;
+}
+
+export interface UpdateOrderStatusRequest {
+  status: OrderStatus;
+}
+
+export interface UpdateOrderItemStatusRequest {
+  status: OrderItemStatus;
+}
+
+export interface CancelOrderRequest {
+  reason?: string;
+}
+
+

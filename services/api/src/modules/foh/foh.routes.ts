@@ -17,6 +17,7 @@ import {
   seatTableSchema,
   updateTableStatusSchema,
   transferTableSchema,
+  assignServerSchema,
   type CreateDiningAreaInput,
   type UpdateDiningAreaInput,
   type CreateTableInput,
@@ -25,6 +26,7 @@ import {
   type SeatTableInput,
   type UpdateTableStatusInput,
   type TransferTableInput,
+  type AssignServerInput,
 } from "./foh.schemas.js";
 
 export const fohRouter: Router = Router();
@@ -309,6 +311,105 @@ fohRouter.post(
         ip: req.ip,
         requestId: req.requestId,
       });
+
+      const response: ApiSuccessResponse<typeof result> = {
+        success: true,
+        data: result,
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── Staff & Server Assignments ──────────────────────────────────────────
+
+/**
+ * GET /foh/staff
+ * Retrieves active staff members and their roles for assignment.
+ */
+fohRouter.get(
+  "/staff",
+  requirePermission("table:view"),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const orgId = req.organizationId!;
+      const result = await FoHService.getStaffMembers(orgId);
+
+      const response: ApiSuccessResponse<typeof result> = {
+        success: true,
+        data: result,
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
+ * PATCH /foh/dining-areas/:id/server
+ * Assigns or unassigns a primary server to a dining section.
+ */
+fohRouter.patch(
+  "/dining-areas/:id/server",
+  requirePermission("table:manage"),
+  validate({ body: assignServerSchema }),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const orgId = req.organizationId!;
+      const actorId = req.user!.id;
+      const areaId = req.params.id as string;
+      const { serverUserId } = req.body as AssignServerInput;
+
+      const result = await FoHService.assignSectionServer(
+        orgId,
+        actorId,
+        areaId,
+        serverUserId,
+        {
+          ip: req.ip,
+          requestId: req.requestId,
+        },
+      );
+
+      const response: ApiSuccessResponse<typeof result> = {
+        success: true,
+        data: result,
+      };
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
+ * PATCH /foh/tables/:id/server
+ * Assigns or unassigns a dedicated server to a table.
+ */
+fohRouter.patch(
+  "/tables/:id/server",
+  requirePermission("table:manage"),
+  validate({ body: assignServerSchema }),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const orgId = req.organizationId!;
+      const actorId = req.user!.id;
+      const tableId = req.params.id as string;
+      const { serverUserId } = req.body as AssignServerInput;
+
+      const result = await FoHService.assignTableServer(
+        orgId,
+        actorId,
+        tableId,
+        serverUserId,
+        {
+          ip: req.ip,
+          requestId: req.requestId,
+        },
+      );
 
       const response: ApiSuccessResponse<typeof result> = {
         success: true,

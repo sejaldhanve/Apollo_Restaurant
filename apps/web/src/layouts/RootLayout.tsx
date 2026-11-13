@@ -7,6 +7,9 @@ import {
   UtensilsCrossed,
   LayoutDashboard,
   Grid3X3,
+  Users,
+  CreditCard,
+  Flame,
 } from "lucide-react";
 
 export function RootLayout() {
@@ -68,6 +71,42 @@ export function RootLayout() {
               >
                 <Grid3X3 className="h-3.5 w-3.5" />
                 <span>Floor Plan</span>
+              </Link>
+
+              <Link
+                to="/team"
+                className={`flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  location.pathname.startsWith("/team")
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Team & Staff</span>
+              </Link>
+
+              <Link
+                to="/pos"
+                className={`flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  location.pathname.startsWith("/pos")
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <CreditCard className="h-3.5 w-3.5" />
+                <span>POS Terminal</span>
+              </Link>
+
+              <Link
+                to="/kitchen"
+                className={`flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  location.pathname.startsWith("/kitchen")
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Flame className="h-3.5 w-3.5" />
+                <span>Kitchen Display</span>
               </Link>
             </nav>
           </div>

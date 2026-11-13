@@ -31,12 +31,14 @@ export const createDiningAreaSchema = z.object({
   locationId: z.string().uuid("Invalid location ID"),
   name: z.string().min(1, "Dining area name is required").max(100),
   sortOrder: z.number().int().default(0),
+  assignedServerId: z.string().uuid().nullable().optional(),
 });
 
 export const updateDiningAreaSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   sortOrder: z.number().int().optional(),
   isActive: z.boolean().optional(),
+  assignedServerId: z.string().uuid().nullable().optional(),
 });
 
 // ─── Table Schemas ──────────────────────────────────────────────────────────
@@ -53,6 +55,7 @@ export const createTableSchema = z.object({
   width: z.number().positive().default(100),
   height: z.number().positive().default(100),
   rotation: z.number().default(0),
+  assignedServerId: z.string().uuid().nullable().optional(),
 });
 
 export const updateTableSchema = z.object({
@@ -67,6 +70,7 @@ export const updateTableSchema = z.object({
   height: z.number().positive().optional(),
   rotation: z.number().optional(),
   isActive: z.boolean().optional(),
+  assignedServerId: z.string().uuid().nullable().optional(),
 });
 
 export const tableLayoutItemSchema = z.object({
@@ -101,6 +105,10 @@ export const transferTableSchema = z.object({
   { message: "Must provide either targetTableId or targetServerUserId for transfer" }
 );
 
+export const assignServerSchema = z.object({
+  serverUserId: z.string().uuid("Invalid server user ID").nullable(),
+});
+
 export type CreateDiningAreaInput = z.infer<typeof createDiningAreaSchema>;
 export type UpdateDiningAreaInput = z.infer<typeof updateDiningAreaSchema>;
 export type CreateTableInput = z.infer<typeof createTableSchema>;
@@ -110,4 +118,5 @@ export type UpdateTableLayoutInput = z.infer<typeof updateTableLayoutSchema>;
 export type SeatTableInput = z.infer<typeof seatTableSchema>;
 export type UpdateTableStatusInput = z.infer<typeof updateTableStatusSchema>;
 export type TransferTableInput = z.infer<typeof transferTableSchema>;
+export type AssignServerInput = z.infer<typeof assignServerSchema>;
 

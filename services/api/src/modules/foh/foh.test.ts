@@ -287,4 +287,71 @@ describe("FoH Floor Plan & Table Management Routes", () => {
       expect(res.body.data.sourceTableStatus).toBe("DIRTY");
     });
   });
+
+  describe("Server Assignment Routes", () => {
+    const mockStaffUserId = "dddd1111-dddd-4ddd-8ddd-dddddddddddd";
+
+    it("GET /api/v1/foh/staff - should return active staff members", async () => {
+      vi.spyOn(FoHService, "getStaffMembers").mockResolvedValue([
+        {
+          id: mockStaffUserId,
+          firstName: "Auguste",
+          lastName: "Gusteau",
+          email: "gusteau@apollo.local",
+          role: "Server",
+        },
+      ]);
+
+      const res = await request(app)
+        .get("/api/v1/foh/staff")
+        .set("Authorization", `Bearer ${validToken}`)
+        .set("X-Organization-Id", mockOrgId);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].id).toBe(mockStaffUserId);
+      expect(res.body.data[0].role).toBe("Server");
+    });
+
+    it("PATCH /api/v1/foh/dining-areas/:id/server - should assign server to dining section", async () => {
+      vi.spyOn(FoHService, "assignSectionServer").mockResolvedValue({
+        id: mockDiningAreaId,
+        name: "Main Dining",
+        assignedServerId: mockStaffUserId,
+        assignedServerName: "Auguste Gusteau",
+      });
+
+      const res = await request(app)
+        .patch(`/api/v1/foh/dining-areas/${mockDiningAreaId}/server`)
+        .set("Authorization", `Bearer ${validToken}`)
+        .set("X-Organization-Id", mockOrgId)
+        .send({ serverUserId: mockStaffUserId });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.assignedServerId).toBe(mockStaffUserId);
+      expect(res.body.data.assignedServerName).toBe("Auguste Gusteau");
+    });
+
+    it("PATCH /api/v1/foh/tables/:id/server - should assign dedicated server to table", async () => {
+      vi.spyOn(FoHService, "assignTableServer").mockResolvedValue({
+        id: mockTableId,
+        tableNumber: "T1",
+        assignedServerId: mockStaffUserId,
+        assignedServerName: "Auguste Gusteau",
+      });
+
+      const res = await request(app)
+        .patch(`/api/v1/foh/tables/${mockTableId}/server`)
+        .set("Authorization", `Bearer ${validToken}`)
+        .set("X-Organization-Id", mockOrgId)
+        .send({ serverUserId: mockStaffUserId });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.assignedServerId).toBe(mockStaffUserId);
+      expect(res.body.data.assignedServerName).toBe("Auguste Gusteau");
+    });
+  });
 });

@@ -5,6 +5,9 @@ import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { MenuManagementPage } from "@/pages/MenuManagementPage";
 import { FloorPlanPage } from "@/pages/FloorPlanPage";
+import { TeamManagementPage } from "@/pages/TeamManagementPage";
+import { PosPage } from "@/pages/PosPage";
+import { KitchenPage } from "@/pages/KitchenPage";
 import { RootLayout } from "@/layouts/RootLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -24,6 +27,9 @@ export function AppRouter() {
           <Route index element={<DashboardPage />} />
           <Route path="/menu" element={<MenuManagementPage />} />
           <Route path="/floor-plan" element={<FloorPlanPage />} />
+          <Route path="/team" element={<TeamManagementPage />} />
+          <Route path="/pos" element={<PosPage />} />
+          <Route path="/kitchen" element={<KitchenPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

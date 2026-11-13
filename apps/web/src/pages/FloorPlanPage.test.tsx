@@ -111,7 +111,11 @@ describe("FloorPlanPage Component", () => {
       ],
     };
 
-    vi.mocked(apiClient.get).mockResolvedValue(mockFloorPlan);
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url.includes("/floor-plan")) return Promise.resolve(mockFloorPlan);
+      if (url.includes("/staff")) return Promise.resolve([]);
+      return Promise.resolve(mockFloorPlan);
+    });
 
     render(<FloorPlanPage />);
 
@@ -122,5 +126,127 @@ describe("FloorPlanPage Component", () => {
 
     expect(screen.getByText("Main Dining")).toBeInTheDocument();
     expect(screen.getByText("Floor Designer")).toBeInTheDocument();
+  });
+
+  it("renders section server control and assigns staff member to dining area", async () => {
+    const mockFloorPlan = {
+      locationId: "loc-1",
+      diningAreas: [
+        {
+          id: "area-1",
+          organizationId: "org-1",
+          locationId: "loc-1",
+          name: "Main Dining",
+          sortOrder: 0,
+          isActive: true,
+          assignedServerId: null,
+          assignedServerName: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      tables: [],
+    };
+
+    const mockStaff = [
+      {
+        id: "staff-1",
+        firstName: "Auguste",
+        lastName: "Gusteau",
+        email: "gusteau@apollo.local",
+        role: "Server",
+      },
+    ];
+
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url.includes("/floor-plan")) return Promise.resolve(mockFloorPlan);
+      if (url.includes("/staff")) return Promise.resolve(mockStaff);
+      return Promise.resolve({});
+    });
+    vi.mocked(apiClient.patch).mockResolvedValue({ success: true });
+
+    render(<FloorPlanPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Section Server:")).toBeInTheDocument();
+    });
+
+    const select = screen.getByDisplayValue("Unassigned");
+    expect(select).toBeInTheDocument();
+  });
+
+  it("allows selecting a table and displays dedicated server assignment control", async () => {
+    const mockFloorPlan = {
+      locationId: "loc-1",
+      diningAreas: [
+        {
+          id: "area-1",
+          organizationId: "org-1",
+          locationId: "loc-1",
+          name: "Main Dining",
+          sortOrder: 0,
+          isActive: true,
+          assignedServerId: null,
+          assignedServerName: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      tables: [
+        {
+          id: "tbl-1",
+          organizationId: "org-1",
+          locationId: "loc-1",
+          diningAreaId: "area-1",
+          tableNumber: "T1",
+          shape: "RECTANGLE" as const,
+          minCovers: 2,
+          maxCovers: 4,
+          posX: 50,
+          posY: 50,
+          width: 100,
+          height: 100,
+          rotation: 0,
+          status: "AVAILABLE" as const,
+          isActive: true,
+          assignedServerId: null,
+          assignedServerName: null,
+          activeSession: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+    };
+
+    const mockStaff = [
+      {
+        id: "staff-1",
+        firstName: "Auguste",
+        lastName: "Gusteau",
+        email: "gusteau@apollo.local",
+        role: "Server",
+      },
+    ];
+
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url.includes("/floor-plan")) return Promise.resolve(mockFloorPlan);
+      if (url.includes("/staff")) return Promise.resolve(mockStaff);
+      return Promise.resolve({});
+    });
+
+    render(<FloorPlanPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("T1")).toBeInTheDocument();
+    });
+
+    // Click table T1
+    const tableEl = screen.getByText("T1");
+    tableEl.click();
+
+    await waitFor(() => {
+      expect(screen.getByText("Dedicated Server")).toBeInTheDocument();
+      expect(screen.getByText("Seat Party Now")).toBeInTheDocument();
+    });
   });
 });
