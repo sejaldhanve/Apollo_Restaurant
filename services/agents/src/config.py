@@ -16,6 +16,14 @@ class Settings(BaseSettings):
 
     # API backend
     API_BASE_URL: str = "http://localhost:3001/api/v1"
+    API_CLIENT_TIMEOUT_SECONDS: float = 5.0
+
+    # JWT Authentication (matches Apollo API backend signing configuration)
+    JWT_SECRET: str = "CHANGE_ME_IN_PRODUCTION_minimum_32_chars_long!!"
+
+    # Orchestrator
+    ORCHESTRATOR_TIMEOUT_SECONDS: int = 30
+    EXECUTION_HISTORY_LIMIT: int = 1000
 
     # LLM Providers (all optional — configure at least one)
     OPENAI_API_KEY: str = ""
@@ -26,7 +34,17 @@ class Settings(BaseSettings):
     DEFAULT_LLM_PROVIDER: str = "openai"  # openai | gemini | ollama
     DEFAULT_LLM_MODEL: str = "gpt-4o-mini"
 
-    model_config = {"env_file": "../../.env", "env_file_encoding": "utf-8", "extra": "ignore"}
+    model_config = {
+        "env_file": [
+            ".env",
+            "services/api/.env",
+            "../api/.env",
+            "../../.env",
+            "services/agents/.env",
+        ],
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+    }
 
 
 settings = Settings()

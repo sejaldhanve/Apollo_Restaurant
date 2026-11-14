@@ -51,7 +51,9 @@ describe("Socket.IO Authentication and Authorization", () => {
       await socketAuthMiddleware(mockSocket, next);
 
       expect(next).toHaveBeenCalledWith(expect.any(Error));
-      expect(next.mock.calls[0][0].message).toBe("Authentication error: Token required");
+      expect(next.mock.calls[0][0].message).toBe(
+        "Authentication error: Token required",
+      );
       expect(mockSocket.data.user).toBeUndefined();
     });
 
@@ -66,7 +68,9 @@ describe("Socket.IO Authentication and Authorization", () => {
       await socketAuthMiddleware(mockSocket, next);
 
       expect(next).toHaveBeenCalledWith(expect.any(Error));
-      expect(next.mock.calls[0][0].message).toBe("Authentication error: Invalid token");
+      expect(next.mock.calls[0][0].message).toBe(
+        "Authentication error: Invalid token",
+      );
       expect(mockSocket.data.user).toBeUndefined();
     });
 
@@ -88,7 +92,9 @@ describe("Socket.IO Authentication and Authorization", () => {
       await socketAuthMiddleware(mockSocket, next);
 
       expect(next).toHaveBeenCalledWith(expect.any(Error));
-      expect(next.mock.calls[0][0].message).toBe("Authentication error: Token expired");
+      expect(next.mock.calls[0][0].message).toBe(
+        "Authentication error: Token expired",
+      );
       expect(mockSocket.data.user).toBeUndefined();
     });
 
@@ -117,7 +123,9 @@ describe("Socket.IO Authentication and Authorization", () => {
       await socketAuthMiddleware(mockSocket, next);
 
       expect(next).toHaveBeenCalledWith(expect.any(Error));
-      expect(next.mock.calls[0][0].message).toBe("Authentication error: Account is inactive or suspended");
+      expect(next.mock.calls[0][0].message).toBe(
+        "Authentication error: Account is inactive or suspended",
+      );
       expect(mockSocket.data.user).toBeUndefined();
     });
 
@@ -201,7 +209,9 @@ describe("Socket.IO Authentication and Authorization", () => {
       const cb = vi.fn();
 
       // User has no active membership in Org B
-      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce(
+        null,
+      );
 
       const success = await authorizeAndJoinLocation(
         mockSocket,
@@ -230,14 +240,19 @@ describe("Socket.IO Authentication and Authorization", () => {
       const cb = vi.fn();
 
       // User is active in Org A
-      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce({
-        id: "mem-1",
-        userId: mockUserId,
-        organizationId: mockOrgA,
-        status: "ACTIVE",
-        role: { name: "Server", permissions: [{ permission: { code: "order:view" } }] },
-        locationMemberships: [],
-      } as any);
+      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce(
+        {
+          id: "mem-1",
+          userId: mockUserId,
+          organizationId: mockOrgA,
+          status: "ACTIVE",
+          role: {
+            name: "Server",
+            permissions: [{ permission: { code: "order:view" } }],
+          },
+          locationMemberships: [],
+        } as any,
+      );
 
       // But location does not belong to Org A
       vi.mocked(prisma.location.findFirst).mockResolvedValueOnce(null);
@@ -265,14 +280,19 @@ describe("Socket.IO Authentication and Authorization", () => {
       const cb = vi.fn();
 
       // User has active membership in Org A as Server, but only assigned to locA1 (not locA2)
-      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce({
-        id: "mem-1",
-        userId: mockUserId,
-        organizationId: mockOrgA,
-        status: "ACTIVE",
-        role: { name: "Server", permissions: [{ permission: { code: "order:view" } }] },
-        locationMemberships: [{ locationId: mockLocA1 }],
-      } as any);
+      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce(
+        {
+          id: "mem-1",
+          userId: mockUserId,
+          organizationId: mockOrgA,
+          status: "ACTIVE",
+          role: {
+            name: "Server",
+            permissions: [{ permission: { code: "order:view" } }],
+          },
+          locationMemberships: [{ locationId: mockLocA1 }],
+        } as any,
+      );
 
       // Location A2 belongs to Org A
       vi.mocked(prisma.location.findFirst).mockResolvedValueOnce({
@@ -308,14 +328,19 @@ describe("Socket.IO Authentication and Authorization", () => {
       const cb = vi.fn();
 
       // User is assigned to locA1, but role has no order/kds permissions (e.g. Guest/Viewer)
-      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce({
-        id: "mem-1",
-        userId: mockUserId,
-        organizationId: mockOrgA,
-        status: "ACTIVE",
-        role: { name: "Guest", permissions: [{ permission: { code: "profile:view" } }] },
-        locationMemberships: [{ locationId: mockLocA1 }],
-      } as any);
+      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce(
+        {
+          id: "mem-1",
+          userId: mockUserId,
+          organizationId: mockOrgA,
+          status: "ACTIVE",
+          role: {
+            name: "Guest",
+            permissions: [{ permission: { code: "profile:view" } }],
+          },
+          locationMemberships: [{ locationId: mockLocA1 }],
+        } as any,
+      );
 
       vi.mocked(prisma.location.findFirst).mockResolvedValueOnce({
         id: mockLocA1,
@@ -346,14 +371,19 @@ describe("Socket.IO Authentication and Authorization", () => {
       const cb = vi.fn();
 
       // Active member, role has order:view, assigned to locA1
-      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce({
-        id: "mem-1",
-        userId: mockUserId,
-        organizationId: mockOrgA,
-        status: "ACTIVE",
-        role: { name: "Kitchen", permissions: [{ permission: { code: "kds:view" } }] },
-        locationMemberships: [{ locationId: mockLocA1 }],
-      } as any);
+      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce(
+        {
+          id: "mem-1",
+          userId: mockUserId,
+          organizationId: mockOrgA,
+          status: "ACTIVE",
+          role: {
+            name: "Kitchen",
+            permissions: [{ permission: { code: "kds:view" } }],
+          },
+          locationMemberships: [{ locationId: mockLocA1 }],
+        } as any,
+      );
 
       vi.mocked(prisma.location.findFirst).mockResolvedValueOnce({
         id: mockLocA1,
@@ -391,14 +421,16 @@ describe("Socket.IO Authentication and Authorization", () => {
       const cb = vi.fn();
 
       // Owner role has implicit organization-wide access to all locations
-      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce({
-        id: "mem-owner",
-        userId: mockUserId,
-        organizationId: mockOrgA,
-        status: "ACTIVE",
-        role: { name: "Owner", permissions: [{ permission: { code: "*" } }] },
-        locationMemberships: [], // No explicit location membership required for Owner
-      } as any);
+      vi.mocked(prisma.organizationMembership.findUnique).mockResolvedValueOnce(
+        {
+          id: "mem-owner",
+          userId: mockUserId,
+          organizationId: mockOrgA,
+          status: "ACTIVE",
+          role: { name: "Owner", permissions: [{ permission: { code: "*" } }] },
+          locationMemberships: [], // No explicit location membership required for Owner
+        } as any,
+      );
 
       vi.mocked(prisma.location.findFirst).mockResolvedValueOnce({
         id: mockLocA2,
@@ -481,4 +513,3 @@ describe("Socket.IO Authentication and Authorization", () => {
     });
   });
 });
-

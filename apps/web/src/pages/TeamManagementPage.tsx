@@ -45,7 +45,9 @@ export function TeamManagementPage() {
   const [inviteTempPassword, setInviteTempPassword] = useState<string>("");
 
   // Edit Role/Location Modal
-  const [editingMember, setEditingMember] = useState<TeamMemberDto | null>(null);
+  const [editingMember, setEditingMember] = useState<TeamMemberDto | null>(
+    null,
+  );
   const [editRoleId, setEditRoleId] = useState<string>("");
   const [editLocationIds, setEditLocationIds] = useState<string[]>([]);
 
@@ -66,7 +68,8 @@ export function TeamManagementPage() {
 
       if (rolesRes.length > 0 && !inviteRoleId) {
         // Default invite role to Server if present, or first role
-        const defaultRole = rolesRes.find((r) => r.name === "Server") || rolesRes[0];
+        const defaultRole =
+          rolesRes.find((r) => r.name === "Server") || rolesRes[0];
         setInviteRoleId(defaultRole?.id || "");
       }
     } catch (err: any) {
@@ -83,7 +86,12 @@ export function TeamManagementPage() {
   // Handle Invite / Add Staff
   const handleInviteStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail.trim() || !inviteFirstName.trim() || !inviteLastName.trim() || !inviteRoleId) {
+    if (
+      !inviteEmail.trim() ||
+      !inviteFirstName.trim() ||
+      !inviteLastName.trim() ||
+      !inviteRoleId
+    ) {
       return;
     }
     setIsSubmitting(true);
@@ -226,7 +234,10 @@ export function TeamManagementPage() {
   const serversCount = members.filter((m) => m.role.name === "Server").length;
   const kitchenCount = members.filter((m) => m.role.name === "Kitchen").length;
   const managersCount = members.filter(
-    (m) => m.role.name === "Manager" || m.role.name === "Admin" || m.role.name === "Owner",
+    (m) =>
+      m.role.name === "Manager" ||
+      m.role.name === "Admin" ||
+      m.role.name === "Owner",
   ).length;
 
   return (
@@ -243,7 +254,8 @@ export function TeamManagementPage() {
             </span>
           </div>
           <p className="mt-1 text-sm text-gray-500">
-            Enrol staff members, assign organization roles, control location access, and manage server availability.
+            Enrol staff members, assign organization roles, control location
+            access, and manage server availability.
           </p>
         </div>
 
@@ -254,7 +266,9 @@ export function TeamManagementPage() {
             className="rounded-lg border border-gray-300 bg-white p-2 text-gray-600 shadow-xs hover:bg-gray-50 disabled:opacity-50"
             title="Refresh Staff List"
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+            />
           </button>
 
           <button
@@ -288,24 +302,44 @@ export function TeamManagementPage() {
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <div className="rounded-xl border border-gray-200 bg-white p-3.5 shadow-2xs">
-          <p className="text-2xs font-bold uppercase tracking-wider text-gray-500">Total Staff</p>
-          <p className="mt-1 text-2xl font-extrabold text-gray-900">{totalStaff}</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-gray-500">
+            Total Staff
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-gray-900">
+            {totalStaff}
+          </p>
         </div>
         <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 shadow-2xs">
-          <p className="text-2xs font-bold uppercase tracking-wider text-emerald-800">Active Staff</p>
-          <p className="mt-1 text-2xl font-extrabold text-emerald-900">{activeStaff}</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-emerald-800">
+            Active Staff
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-emerald-900">
+            {activeStaff}
+          </p>
         </div>
         <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3.5 shadow-2xs">
-          <p className="text-2xs font-bold uppercase tracking-wider text-blue-800">Servers (FoH)</p>
-          <p className="mt-1 text-2xl font-extrabold text-blue-900">{serversCount}</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-blue-800">
+            Servers (FoH)
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-blue-900">
+            {serversCount}
+          </p>
         </div>
         <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 shadow-2xs">
-          <p className="text-2xs font-bold uppercase tracking-wider text-amber-800">Kitchen (BoH)</p>
-          <p className="mt-1 text-2xl font-extrabold text-amber-900">{kitchenCount}</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-amber-800">
+            Kitchen (BoH)
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-amber-900">
+            {kitchenCount}
+          </p>
         </div>
         <div className="rounded-xl border border-purple-200 bg-purple-50/60 p-3.5 shadow-2xs">
-          <p className="text-2xs font-bold uppercase tracking-wider text-purple-800">Management</p>
-          <p className="mt-1 text-2xl font-extrabold text-purple-900">{managersCount}</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-purple-800">
+            Management
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-purple-900">
+            {managersCount}
+          </p>
         </div>
       </div>
 
@@ -323,7 +357,15 @@ export function TeamManagementPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          {["ALL", "Owner", "Admin", "Manager", "Server", "Kitchen", "Viewer"].map((roleName) => (
+          {[
+            "ALL",
+            "Owner",
+            "Admin",
+            "Manager",
+            "Server",
+            "Kitchen",
+            "Viewer",
+          ].map((roleName) => (
             <button
               key={roleName}
               onClick={() => setSelectedRoleFilter(roleName)}
@@ -344,7 +386,9 @@ export function TeamManagementPage() {
         {filteredMembers.length === 0 ? (
           <div className="p-12 text-center">
             <Users className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-bold text-gray-900">No staff members found</h3>
+            <h3 className="mt-2 text-sm font-bold text-gray-900">
+              No staff members found
+            </h3>
             <p className="mt-1 text-xs text-gray-500">
               {searchQuery || selectedRoleFilter !== "ALL"
                 ? "Try clearing your search or filter."
@@ -356,11 +400,21 @@ export function TeamManagementPage() {
             <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
               <thead className="bg-gray-50/80 text-xs font-bold uppercase tracking-wider text-gray-500">
                 <tr>
-                  <th scope="col" className="py-3.5 pl-6 pr-3">Staff Member</th>
-                  <th scope="col" className="px-3 py-3.5">Role</th>
-                  <th scope="col" className="px-3 py-3.5">Status</th>
-                  <th scope="col" className="px-3 py-3.5">Assigned Locations</th>
-                  <th scope="col" className="px-3 py-3.5 text-right pr-6">Actions</th>
+                  <th scope="col" className="py-3.5 pl-6 pr-3">
+                    Staff Member
+                  </th>
+                  <th scope="col" className="px-3 py-3.5">
+                    Role
+                  </th>
+                  <th scope="col" className="px-3 py-3.5">
+                    Status
+                  </th>
+                  <th scope="col" className="px-3 py-3.5">
+                    Assigned Locations
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-right pr-6">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
@@ -371,7 +425,10 @@ export function TeamManagementPage() {
                     members.filter((m) => m.role.name === "Owner").length === 1;
 
                   return (
-                    <tr key={member.id} className="hover:bg-gray-50/60 transition">
+                    <tr
+                      key={member.id}
+                      className="hover:bg-gray-50/60 transition"
+                    >
                       {/* Name & Email */}
                       <td className="whitespace-nowrap py-4 pl-6 pr-3">
                         <div className="flex items-center space-x-3">
@@ -390,7 +447,9 @@ export function TeamManagementPage() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-gray-500">{member.email}</div>
+                            <div className="text-xs text-gray-500">
+                              {member.email}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -426,7 +485,9 @@ export function TeamManagementPage() {
                       {/* Locations */}
                       <td className="px-3 py-4 text-xs text-gray-600">
                         {member.locations.length === 0 ? (
-                          <span className="text-gray-400 italic">All locations</span>
+                          <span className="text-gray-400 italic">
+                            All locations
+                          </span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {member.locations.map((loc) => (
@@ -449,7 +510,9 @@ export function TeamManagementPage() {
                           onClick={() => {
                             setEditingMember(member);
                             setEditRoleId(member.role.id);
-                            setEditLocationIds(member.locations.map((l) => l.id));
+                            setEditLocationIds(
+                              member.locations.map((l) => l.id),
+                            );
                           }}
                           className="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-gray-700 shadow-2xs hover:bg-gray-50 font-semibold"
                         >
@@ -467,7 +530,9 @@ export function TeamManagementPage() {
                                 : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                             }`}
                           >
-                            {member.status === "ACTIVE" ? "Suspend" : "Activate"}
+                            {member.status === "ACTIVE"
+                              ? "Suspend"
+                              : "Activate"}
                           </button>
                         )}
                       </td>
@@ -486,9 +551,12 @@ export function TeamManagementPage() {
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Add Staff Member</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Add Staff Member
+                </h3>
                 <p className="text-xs text-gray-500">
-                  Enrol a team member into your organization with assigned roles and station access.
+                  Enrol a team member into your organization with assigned roles
+                  and station access.
                 </p>
               </div>
               <button
@@ -502,7 +570,9 @@ export function TeamManagementPage() {
             <form onSubmit={handleInviteStaff} className="mt-4 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700">First Name</label>
+                  <label className="block text-xs font-bold text-gray-700">
+                    First Name
+                  </label>
                   <input
                     type="text"
                     required
@@ -513,7 +583,9 @@ export function TeamManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700">Last Name</label>
+                  <label className="block text-xs font-bold text-gray-700">
+                    Last Name
+                  </label>
                   <input
                     type="text"
                     required
@@ -526,7 +598,9 @@ export function TeamManagementPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700">Email Address</label>
+                <label className="block text-xs font-bold text-gray-700">
+                  Email Address
+                </label>
                 <div className="relative mt-1">
                   <Mail className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   <input
@@ -541,7 +615,9 @@ export function TeamManagementPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700">Organization Role</label>
+                <label className="block text-xs font-bold text-gray-700">
+                  Organization Role
+                </label>
                 <select
                   required
                   value={inviteRoleId}
@@ -558,23 +634,35 @@ export function TeamManagementPage() {
 
               {locations.length > 0 && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-700">Location Access</label>
+                  <label className="block text-xs font-bold text-gray-700">
+                    Location Access
+                  </label>
                   <div className="mt-1.5 space-y-1.5 rounded-lg border border-gray-200 p-2.5 bg-gray-50/50">
                     {locations.map((loc) => (
-                      <label key={loc.id} className="flex items-center space-x-2 text-xs font-medium text-gray-700">
+                      <label
+                        key={loc.id}
+                        className="flex items-center space-x-2 text-xs font-medium text-gray-700"
+                      >
                         <input
                           type="checkbox"
                           checked={inviteLocationIds.includes(loc.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setInviteLocationIds([...inviteLocationIds, loc.id]);
+                              setInviteLocationIds([
+                                ...inviteLocationIds,
+                                loc.id,
+                              ]);
                             } else {
-                              setInviteLocationIds(inviteLocationIds.filter((id) => id !== loc.id));
+                              setInviteLocationIds(
+                                inviteLocationIds.filter((id) => id !== loc.id),
+                              );
                             }
                           }}
                           className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                         />
-                        <span>{loc.name} ({loc.code})</span>
+                        <span>
+                          {loc.name} ({loc.code})
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -583,7 +671,10 @@ export function TeamManagementPage() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-700">
-                  Initial Password <span className="font-normal text-gray-400">(Optional, min 8 chars)</span>
+                  Initial Password{" "}
+                  <span className="font-normal text-gray-400">
+                    (Optional, min 8 chars)
+                  </span>
                 </label>
                 <div className="relative mt-1">
                   <Lock className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -639,7 +730,9 @@ export function TeamManagementPage() {
 
             <div className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700">Change Role</label>
+                <label className="block text-xs font-bold text-gray-700">
+                  Change Role
+                </label>
                 <select
                   value={editRoleId}
                   onChange={(e) => setEditRoleId(e.target.value)}
@@ -653,7 +746,9 @@ export function TeamManagementPage() {
                 </select>
                 <button
                   onClick={() => handleUpdateRole(editingMember.id, editRoleId)}
-                  disabled={isSubmitting || editRoleId === editingMember.role.id}
+                  disabled={
+                    isSubmitting || editRoleId === editingMember.role.id
+                  }
                   className="mt-2 w-full rounded-lg bg-indigo-600 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
                 >
                   Save Role
@@ -662,10 +757,15 @@ export function TeamManagementPage() {
 
               {locations.length > 0 && (
                 <div className="pt-2 border-t border-gray-100">
-                  <label className="block text-xs font-bold text-gray-700">Location Access</label>
+                  <label className="block text-xs font-bold text-gray-700">
+                    Location Access
+                  </label>
                   <div className="mt-1.5 space-y-1.5 rounded-lg border border-gray-200 p-2.5 bg-gray-50/50">
                     {locations.map((loc) => (
-                      <label key={loc.id} className="flex items-center space-x-2 text-xs font-medium text-gray-700">
+                      <label
+                        key={loc.id}
+                        className="flex items-center space-x-2 text-xs font-medium text-gray-700"
+                      >
                         <input
                           type="checkbox"
                           checked={editLocationIds.includes(loc.id)}
@@ -673,12 +773,16 @@ export function TeamManagementPage() {
                             if (e.target.checked) {
                               setEditLocationIds([...editLocationIds, loc.id]);
                             } else {
-                              setEditLocationIds(editLocationIds.filter((id) => id !== loc.id));
+                              setEditLocationIds(
+                                editLocationIds.filter((id) => id !== loc.id),
+                              );
                             }
                           }}
                           className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                         />
-                        <span>{loc.name} ({loc.code})</span>
+                        <span>
+                          {loc.name} ({loc.code})
+                        </span>
                       </label>
                     ))}
                   </div>

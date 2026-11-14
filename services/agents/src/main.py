@@ -35,5 +35,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount system health routers
 app.include_router(health_router, prefix="/health", tags=["System"])
+app.include_router(health_router, prefix="/api/v1/health", tags=["System"])
+
+# Mount agent orchestrator routers (/api/v1/agents and /agents for compatibility)
+app.include_router(agents_router, prefix="/api/v1/agents", tags=["Agents"])
 app.include_router(agents_router, prefix="/agents", tags=["Agents"])

@@ -8,6 +8,7 @@ import { FloorPlanPage } from "@/pages/FloorPlanPage";
 import { TeamManagementPage } from "@/pages/TeamManagementPage";
 import { PosPage } from "@/pages/PosPage";
 import { KitchenPage } from "@/pages/KitchenPage";
+import { AiOperationsPage } from "@/pages/ai-ops/AiOperationsPage";
 import { RootLayout } from "@/layouts/RootLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -30,6 +31,9 @@ export function AppRouter() {
           <Route path="/team" element={<TeamManagementPage />} />
           <Route path="/pos" element={<PosPage />} />
           <Route path="/kitchen" element={<KitchenPage />} />
+          <Route path="/ai-ops" element={<AiOperationsPage />} />
+          <Route path="/ai-ops/*" element={<AiOperationsPage />} />
+          <Route path="/ai-operations" element={<AiOperationsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

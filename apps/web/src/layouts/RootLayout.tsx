@@ -10,6 +10,7 @@ import {
   Users,
   CreditCard,
   Flame,
+  Bot,
 } from "lucide-react";
 
 export function RootLayout() {
@@ -107,6 +108,18 @@ export function RootLayout() {
               >
                 <Flame className="h-3.5 w-3.5" />
                 <span>Kitchen Display</span>
+              </Link>
+
+              <Link
+                to="/ai-ops"
+                className={`flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  location.pathname.startsWith("/ai-ops")
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Bot className="h-3.5 w-3.5" />
+                <span>AI Operations</span>
               </Link>
             </nav>
           </div>

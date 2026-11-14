@@ -379,10 +379,16 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
 
     // Query as Tenant A
     await db.exec("BEGIN;");
-    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`);
+    await db.exec(
+      `SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`,
+    );
 
-    const itemsA = await db.query<{ id: string; name: string }>(`SELECT "id", "name" FROM "menu_items";`);
-    const groupsA = await db.query<{ id: string }>(`SELECT "id" FROM "modifier_groups";`);
+    const itemsA = await db.query<{ id: string; name: string }>(
+      `SELECT "id", "name" FROM "menu_items";`,
+    );
+    const groupsA = await db.query<{ id: string }>(
+      `SELECT "id" FROM "modifier_groups";`,
+    );
     await db.exec("COMMIT;");
 
     expect(itemsA.rows.length).toBe(1);
@@ -393,10 +399,16 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
 
     // Query as Tenant B
     await db.exec("BEGIN;");
-    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`);
+    await db.exec(
+      `SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`,
+    );
 
-    const itemsB = await db.query<{ id: string; name: string }>(`SELECT "id", "name" FROM "menu_items";`);
-    const groupsB = await db.query<{ id: string }>(`SELECT "id" FROM "modifier_groups";`);
+    const itemsB = await db.query<{ id: string; name: string }>(
+      `SELECT "id", "name" FROM "menu_items";`,
+    );
+    const groupsB = await db.query<{ id: string }>(
+      `SELECT "id" FROM "modifier_groups";`,
+    );
     await db.exec("COMMIT;");
 
     expect(itemsB.rows.length).toBe(1);
@@ -408,25 +420,31 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
 
   it("12. Phase 2: Tenant A cannot update or delete Tenant B menu items", async () => {
     await db.exec("BEGIN;");
-    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`);
+    await db.exec(
+      `SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`,
+    );
 
     // Attempt to maliciously modify Tenant B's item
     const updateResult = await db.query(
-      `UPDATE "menu_items" SET "name" = 'Hacked Name', "basePriceCents" = 0 WHERE "id" = 'item-b1';`
+      `UPDATE "menu_items" SET "name" = 'Hacked Name', "basePriceCents" = 0 WHERE "id" = 'item-b1';`,
     );
     expect(updateResult.affectedRows).toBe(0);
 
     // Attempt to delete Tenant B's item
-    const deleteResult = await db.query(`DELETE FROM "menu_items" WHERE "id" = 'item-b1';`);
+    const deleteResult = await db.query(
+      `DELETE FROM "menu_items" WHERE "id" = 'item-b1';`,
+    );
     expect(deleteResult.affectedRows).toBe(0);
 
     await db.exec("COMMIT;");
 
     // Verify Tenant B's item is untouched
     await db.exec("BEGIN;");
-    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`);
+    await db.exec(
+      `SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`,
+    );
     const checkItem = await db.query<{ name: string; basePriceCents: number }>(
-      `SELECT "name", "basePriceCents" FROM "menu_items" WHERE "id" = 'item-b1';`
+      `SELECT "name", "basePriceCents" FROM "menu_items" WHERE "id" = 'item-b1';`,
     );
     await db.exec("COMMIT;");
 
@@ -465,10 +483,16 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
 
     // Query as Tenant A
     await db.exec("BEGIN;");
-    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`);
+    await db.exec(
+      `SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`,
+    );
 
-    const stationsA = await db.query<{ id: string }>(`SELECT "id" FROM "kitchen_stations";`);
-    const overridesA = await db.query<{ id: string }>(`SELECT "id" FROM "location_menu_overrides";`);
+    const stationsA = await db.query<{ id: string }>(
+      `SELECT "id" FROM "kitchen_stations";`,
+    );
+    const overridesA = await db.query<{ id: string }>(
+      `SELECT "id" FROM "location_menu_overrides";`,
+    );
     await db.exec("COMMIT;");
 
     expect(stationsA.rows.length).toBe(1);
@@ -478,10 +502,16 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
 
     // Query as Tenant B
     await db.exec("BEGIN;");
-    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`);
+    await db.exec(
+      `SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`,
+    );
 
-    const stationsB = await db.query<{ id: string }>(`SELECT "id" FROM "kitchen_stations";`);
-    const overridesB = await db.query<{ id: string }>(`SELECT "id" FROM "location_menu_overrides";`);
+    const stationsB = await db.query<{ id: string }>(
+      `SELECT "id" FROM "kitchen_stations";`,
+    );
+    const overridesB = await db.query<{ id: string }>(
+      `SELECT "id" FROM "location_menu_overrides";`,
+    );
     await db.exec("COMMIT;");
 
     expect(stationsB.rows.length).toBe(1);
@@ -508,11 +538,19 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
 
     // Query as Tenant A
     await db.exec("BEGIN;");
-    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`);
+    await db.exec(
+      `SELECT set_config('app.current_tenant_id', '${TENANT_A_ID}', true);`,
+    );
 
-    const areasA = await db.query<{ id: string }>(`SELECT "id" FROM "dining_areas";`);
-    const tablesA = await db.query<{ id: string }>(`SELECT "id" FROM "tables";`);
-    const sessionsA = await db.query<{ id: string }>(`SELECT "id" FROM "table_sessions";`);
+    const areasA = await db.query<{ id: string }>(
+      `SELECT "id" FROM "dining_areas";`,
+    );
+    const tablesA = await db.query<{ id: string }>(
+      `SELECT "id" FROM "tables";`,
+    );
+    const sessionsA = await db.query<{ id: string }>(
+      `SELECT "id" FROM "table_sessions";`,
+    );
     await db.exec("COMMIT;");
 
     expect(areasA.rows.length).toBe(1);
@@ -524,11 +562,19 @@ describe("PostgreSQL Database-Level Row-Level Security (RLS)", () => {
 
     // Query as Tenant B
     await db.exec("BEGIN;");
-    await db.exec(`SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`);
+    await db.exec(
+      `SELECT set_config('app.current_tenant_id', '${TENANT_B_ID}', true);`,
+    );
 
-    const areasB = await db.query<{ id: string }>(`SELECT "id" FROM "dining_areas";`);
-    const tablesB = await db.query<{ id: string }>(`SELECT "id" FROM "tables";`);
-    const sessionsB = await db.query<{ id: string }>(`SELECT "id" FROM "table_sessions";`);
+    const areasB = await db.query<{ id: string }>(
+      `SELECT "id" FROM "dining_areas";`,
+    );
+    const tablesB = await db.query<{ id: string }>(
+      `SELECT "id" FROM "tables";`,
+    );
+    const sessionsB = await db.query<{ id: string }>(
+      `SELECT "id" FROM "table_sessions";`,
+    );
     await db.exec("COMMIT;");
 
     expect(areasB.rows.length).toBe(1);

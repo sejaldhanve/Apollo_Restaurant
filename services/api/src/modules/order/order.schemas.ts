@@ -66,20 +66,15 @@ export const updateOrderStatusSchema = z.object({
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
 
 export const updateOrderItemStatusSchema = z.object({
-  status: z.enum([
-    "PENDING",
-    "IN_PREPARATION",
-    "READY",
-    "SERVED",
-    "CANCELLED",
-  ]),
+  status: z.enum(["PENDING", "IN_PREPARATION", "READY", "SERVED", "CANCELLED"]),
 });
 
-export type UpdateOrderItemStatusInput = z.infer<typeof updateOrderItemStatusSchema>;
+export type UpdateOrderItemStatusInput = z.infer<
+  typeof updateOrderItemStatusSchema
+>;
 
 export const cancelOrderSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
 export type CancelOrderInput = z.infer<typeof cancelOrderSchema>;
-

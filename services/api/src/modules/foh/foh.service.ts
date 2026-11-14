@@ -26,7 +26,9 @@ export class FoHService {
           where: { organizationId: orgId },
         });
         if (!location) {
-          const org = await tx.organization.findUnique({ where: { id: orgId } });
+          const org = await tx.organization.findUnique({
+            where: { id: orgId },
+          });
           const orgName = org?.name || "Main";
           location = await tx.location.create({
             data: {
@@ -53,7 +55,11 @@ export class FoHService {
       });
 
       const tables = await tx.table.findMany({
-        where: { organizationId: orgId, locationId: effectiveLocationId, isActive: true },
+        where: {
+          organizationId: orgId,
+          locationId: effectiveLocationId,
+          isActive: true,
+        },
         include: {
           assignedServer: {
             select: { id: true, firstName: true, lastName: true },
@@ -153,7 +159,9 @@ export class FoHService {
           where: { organizationId: orgId },
         });
         if (!location) {
-          const org = await tx.organization.findUnique({ where: { id: orgId } });
+          const org = await tx.organization.findUnique({
+            where: { id: orgId },
+          });
           const orgName = org?.name || "Main";
           location = await tx.location.create({
             data: {
@@ -221,7 +229,11 @@ export class FoHService {
 
       if (input.name && input.name !== area.name) {
         const conflict = await tx.diningArea.findFirst({
-          where: { locationId: area.locationId, name: input.name, id: { not: id } },
+          where: {
+            locationId: area.locationId,
+            name: input.name,
+            id: { not: id },
+          },
         });
         if (conflict) {
           throw AppError.conflict(
@@ -234,9 +246,13 @@ export class FoHService {
         where: { id },
         data: {
           ...(input.name !== undefined ? { name: input.name } : {}),
-          ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+          ...(input.sortOrder !== undefined
+            ? { sortOrder: input.sortOrder }
+            : {}),
           ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-          ...(input.assignedServerId !== undefined ? { assignedServerId: input.assignedServerId } : {}),
+          ...(input.assignedServerId !== undefined
+            ? { assignedServerId: input.assignedServerId }
+            : {}),
         },
       });
 
@@ -309,7 +325,10 @@ export class FoHService {
           actorId,
           entityType: "Table",
           entityId: table.id,
-          metadata: { tableNumber: table.tableNumber, diningAreaId: table.diningAreaId },
+          metadata: {
+            tableNumber: table.tableNumber,
+            diningAreaId: table.diningAreaId,
+          },
           ipAddress: clientInfo?.ip,
           requestId: clientInfo?.requestId,
         },
@@ -353,18 +372,28 @@ export class FoHService {
       const updated = await tx.table.update({
         where: { id },
         data: {
-          ...(input.tableNumber !== undefined ? { tableNumber: input.tableNumber } : {}),
-          ...(input.diningAreaId !== undefined ? { diningAreaId: input.diningAreaId } : {}),
+          ...(input.tableNumber !== undefined
+            ? { tableNumber: input.tableNumber }
+            : {}),
+          ...(input.diningAreaId !== undefined
+            ? { diningAreaId: input.diningAreaId }
+            : {}),
           ...(input.shape !== undefined ? { shape: input.shape } : {}),
-          ...(input.minCovers !== undefined ? { minCovers: input.minCovers } : {}),
-          ...(input.maxCovers !== undefined ? { maxCovers: input.maxCovers } : {}),
+          ...(input.minCovers !== undefined
+            ? { minCovers: input.minCovers }
+            : {}),
+          ...(input.maxCovers !== undefined
+            ? { maxCovers: input.maxCovers }
+            : {}),
           ...(input.posX !== undefined ? { posX: input.posX } : {}),
           ...(input.posY !== undefined ? { posY: input.posY } : {}),
           ...(input.width !== undefined ? { width: input.width } : {}),
           ...(input.height !== undefined ? { height: input.height } : {}),
           ...(input.rotation !== undefined ? { rotation: input.rotation } : {}),
           ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-          ...(input.assignedServerId !== undefined ? { assignedServerId: input.assignedServerId } : {}),
+          ...(input.assignedServerId !== undefined
+            ? { assignedServerId: input.assignedServerId }
+            : {}),
         },
       });
 
@@ -456,7 +485,9 @@ export class FoHService {
         where: { tableId, organizationId: orgId, status: "ACTIVE" },
       });
       if (existingSession) {
-        throw AppError.conflict("Table is already occupied by an active session");
+        throw AppError.conflict(
+          "Table is already occupied by an active session",
+        );
       }
 
       const serverId =
@@ -591,7 +622,9 @@ export class FoHService {
         where: { tableId, organizationId: orgId, status: "ACTIVE" },
       });
       if (!activeSession) {
-        throw AppError.badRequest("No active party session to transfer on this table");
+        throw AppError.badRequest(
+          "No active party session to transfer on this table",
+        );
       }
 
       // 1. Transfer Server Only
@@ -599,7 +632,9 @@ export class FoHService {
         const updated = await tx.tableSession.update({
           where: { id: activeSession.id },
           data: { serverUserId: input.targetServerUserId },
-          include: { server: { select: { id: true, firstName: true, lastName: true } } },
+          include: {
+            server: { select: { id: true, firstName: true, lastName: true } },
+          },
         });
 
         await AuditService.log(
@@ -649,7 +684,8 @@ export class FoHService {
         });
 
         // Open new session on target table
-        const newServerId = input.targetServerUserId || activeSession.serverUserId || actorId;
+        const newServerId =
+          input.targetServerUserId || activeSession.serverUserId || actorId;
         const newSession = await tx.tableSession.create({
           data: {
             organizationId: orgId,
@@ -660,7 +696,9 @@ export class FoHService {
             status: "ACTIVE",
             seatedAt: activeSession.seatedAt,
           },
-          include: { server: { select: { id: true, firstName: true, lastName: true } } },
+          include: {
+            server: { select: { id: true, firstName: true, lastName: true } },
+          },
         });
 
         // Set target table to SEATED
@@ -743,10 +781,16 @@ export class FoHService {
 
       if (serverUserId) {
         const staff = await tx.organizationMembership.findFirst({
-          where: { organizationId: orgId, userId: serverUserId, status: "ACTIVE" },
+          where: {
+            organizationId: orgId,
+            userId: serverUserId,
+            status: "ACTIVE",
+          },
         });
         if (!staff) {
-          throw AppError.badRequest("Selected server is not an active member of this organization");
+          throw AppError.badRequest(
+            "Selected server is not an active member of this organization",
+          );
         }
       }
 
@@ -754,7 +798,9 @@ export class FoHService {
         where: { id: areaId },
         data: { assignedServerId: serverUserId },
         include: {
-          assignedServer: { select: { id: true, firstName: true, lastName: true } },
+          assignedServer: {
+            select: { id: true, firstName: true, lastName: true },
+          },
         },
       });
 
@@ -800,10 +846,16 @@ export class FoHService {
 
       if (serverUserId) {
         const staff = await tx.organizationMembership.findFirst({
-          where: { organizationId: orgId, userId: serverUserId, status: "ACTIVE" },
+          where: {
+            organizationId: orgId,
+            userId: serverUserId,
+            status: "ACTIVE",
+          },
         });
         if (!staff) {
-          throw AppError.badRequest("Selected server is not an active member of this organization");
+          throw AppError.badRequest(
+            "Selected server is not an active member of this organization",
+          );
         }
       }
 
@@ -811,7 +863,9 @@ export class FoHService {
         where: { id: tableId },
         data: { assignedServerId: serverUserId },
         include: {
-          assignedServer: { select: { id: true, firstName: true, lastName: true } },
+          assignedServer: {
+            select: { id: true, firstName: true, lastName: true },
+          },
         },
       });
 
@@ -848,4 +902,3 @@ export class FoHService {
     });
   }
 }
-

@@ -90,13 +90,7 @@ export interface MeResponse {
 // === Phase 2 — Module 1: Restaurant Configuration & Menu Types ===
 
 export type StationType =
-  | "KITCHEN"
-  | "BAR"
-  | "GRILL"
-  | "SALAD"
-  | "PIZZA"
-  | "EXPO"
-  | "DESSERT";
+  "KITCHEN" | "BAR" | "GRILL" | "SALAD" | "PIZZA" | "EXPO" | "DESSERT";
 
 export interface KitchenStationDto {
   id: string;
@@ -330,11 +324,7 @@ export interface UpsertLocationMenuOverrideRequest {
 // === Phase 2 — Module 2: FoH Floor Plan & Table Management Types ===
 
 export type TableShape =
-  | "RECTANGLE"
-  | "ROUND"
-  | "SQUARE"
-  | "BOOTH"
-  | "BAR_STOOL";
+  "RECTANGLE" | "ROUND" | "SQUARE" | "BOOTH" | "BAR_STOOL";
 
 export type TableStatus =
   | "AVAILABLE"
@@ -551,19 +541,10 @@ export interface UpdateStaffLocationsRequest {
 // ─── Phase 2 Module 4: POS & Order Management ────────────────────────────────
 
 export type OrderStatus =
-  | "DRAFT"
-  | "SUBMITTED"
-  | "IN_PREPARATION"
-  | "READY"
-  | "SERVED"
-  | "CANCELLED";
+  "DRAFT" | "SUBMITTED" | "IN_PREPARATION" | "READY" | "SERVED" | "CANCELLED";
 
 export type OrderItemStatus =
-  | "PENDING"
-  | "IN_PREPARATION"
-  | "READY"
-  | "SERVED"
-  | "CANCELLED";
+  "PENDING" | "IN_PREPARATION" | "READY" | "SERVED" | "CANCELLED";
 
 export type PaymentStatus = "UNPAID" | "PENDING" | "PAID" | "FAILED";
 
@@ -665,5 +646,3 @@ export interface UpdateOrderItemStatusRequest {
 export interface CancelOrderRequest {
   reason?: string;
 }
-
-

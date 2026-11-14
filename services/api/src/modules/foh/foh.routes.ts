@@ -106,10 +106,16 @@ fohRouter.put(
       const id = req.params.id as string;
       const input = req.body as UpdateDiningAreaInput;
 
-      const result = await FoHService.updateDiningArea(orgId, actorId, id, input, {
-        ip: req.ip,
-        requestId: req.requestId,
-      });
+      const result = await FoHService.updateDiningArea(
+        orgId,
+        actorId,
+        id,
+        input,
+        {
+          ip: req.ip,
+          requestId: req.requestId,
+        },
+      );
 
       const response: ApiSuccessResponse<typeof result> = {
         success: true,
@@ -239,10 +245,16 @@ fohRouter.post(
       const tableId = req.params.id as string;
       const input = req.body as SeatTableInput;
 
-      const result = await FoHService.seatTable(orgId, actorId, tableId, input, {
-        ip: req.ip,
-        requestId: req.requestId,
-      });
+      const result = await FoHService.seatTable(
+        orgId,
+        actorId,
+        tableId,
+        input,
+        {
+          ip: req.ip,
+          requestId: req.requestId,
+        },
+      );
 
       const response: ApiSuccessResponse<typeof result> = {
         success: true,
@@ -307,10 +319,16 @@ fohRouter.post(
       const tableId = req.params.id as string;
       const input = req.body as TransferTableInput;
 
-      const result = await FoHService.transferTable(orgId, actorId, tableId, input, {
-        ip: req.ip,
-        requestId: req.requestId,
-      });
+      const result = await FoHService.transferTable(
+        orgId,
+        actorId,
+        tableId,
+        input,
+        {
+          ip: req.ip,
+          requestId: req.requestId,
+        },
+      );
 
       const response: ApiSuccessResponse<typeof result> = {
         success: true,

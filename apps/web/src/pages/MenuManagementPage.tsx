@@ -66,7 +66,9 @@ export function MenuManagementPage() {
   const [newItemCategoryId, setNewItemCategoryId] = useState("");
   const [newItemStationId, setNewItemStationId] = useState("");
   const [newItemTaxRateId, setNewItemTaxRateId] = useState("");
-  const [selectedModifierGroupIds, setSelectedModifierGroupIds] = useState<string[]>([]);
+  const [selectedModifierGroupIds, setSelectedModifierGroupIds] = useState<
+    string[]
+  >([]);
 
   // Form states - Menu, Category, Station, Tax
   const [newMenuName, setNewMenuName] = useState("");
@@ -111,7 +113,9 @@ export function MenuManagementPage() {
         setMenus(loadedMenus);
         if (loadedMenus.length > 0) {
           const currentValid = loadedMenus.some((m) => m.id === selectedMenuId);
-          const activeMenuId = currentValid ? selectedMenuId : loadedMenus[0]!.id;
+          const activeMenuId = currentValid
+            ? selectedMenuId
+            : loadedMenus[0]!.id;
           setSelectedMenuId(activeMenuId);
           setTargetCategoryMenuId(activeMenuId);
 
@@ -236,17 +240,20 @@ export function MenuManagementPage() {
         );
       } else {
         // CREATE new menu item
-        const created = await apiClient.post<MenuItemDto>("/api/v1/menu/items", {
-          categoryId: effectiveCategoryId,
-          name: newItemName.trim(),
-          description: newItemDescription.trim() || undefined,
-          sku: newItemSku.trim() || undefined,
-          basePriceCents: priceCents,
-          prepTimeMinutes: prepMinutes,
-          kitchenStationId: newItemStationId || undefined,
-          taxRateId: newItemTaxRateId || undefined,
-          modifierGroupIds: selectedModifierGroupIds,
-        });
+        const created = await apiClient.post<MenuItemDto>(
+          "/api/v1/menu/items",
+          {
+            categoryId: effectiveCategoryId,
+            name: newItemName.trim(),
+            description: newItemDescription.trim() || undefined,
+            sku: newItemSku.trim() || undefined,
+            basePriceCents: priceCents,
+            prepTimeMinutes: prepMinutes,
+            kitchenStationId: newItemStationId || undefined,
+            taxRateId: newItemTaxRateId || undefined,
+            modifierGroupIds: selectedModifierGroupIds,
+          },
+        );
 
         setItems((prev) => [...prev, created]);
       }
@@ -263,7 +270,11 @@ export function MenuManagementPage() {
 
   // Delete Item Handler
   const handleDeleteItem = async (itemId: string, itemName: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${itemName}"? This cannot be undone.`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete "${itemName}"? This cannot be undone.`,
+      )
+    ) {
       return;
     }
     setIsSubmitting(true);
@@ -334,8 +345,15 @@ export function MenuManagementPage() {
   };
 
   // Delete Modifier Group Handler
-  const handleDeleteModifierGroup = async (groupId: string, groupName: string) => {
-    if (!window.confirm(`Are you sure you want to delete modifier group "${groupName}"?`)) {
+  const handleDeleteModifierGroup = async (
+    groupId: string,
+    groupName: string,
+  ) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete modifier group "${groupName}"?`,
+      )
+    ) {
       return;
     }
     setIsSubmitting(true);
@@ -362,10 +380,30 @@ export function MenuManagementPage() {
           minSelections: 1,
           maxSelections: 1,
           options: [
-            { name: "Mild", priceDeltaCents: 0, isDefault: true, isAvailable: true },
-            { name: "Medium", priceDeltaCents: 0, isDefault: false, isAvailable: true },
-            { name: "Spicy", priceDeltaCents: 50, isDefault: false, isAvailable: true },
-            { name: "Extra Hot", priceDeltaCents: 100, isDefault: false, isAvailable: true },
+            {
+              name: "Mild",
+              priceDeltaCents: 0,
+              isDefault: true,
+              isAvailable: true,
+            },
+            {
+              name: "Medium",
+              priceDeltaCents: 0,
+              isDefault: false,
+              isAvailable: true,
+            },
+            {
+              name: "Spicy",
+              priceDeltaCents: 50,
+              isDefault: false,
+              isAvailable: true,
+            },
+            {
+              name: "Extra Hot",
+              priceDeltaCents: 100,
+              isDefault: false,
+              isAvailable: true,
+            },
           ],
         },
       );
@@ -412,10 +450,13 @@ export function MenuManagementPage() {
         description: "Primary restaurant service menu",
       });
 
-      const appetizers = await apiClient.post<{ id: string }>("/api/v1/menu/categories", {
-        menuId: starterMenu.id,
-        name: "Appetizers & Starters",
-      });
+      const appetizers = await apiClient.post<{ id: string }>(
+        "/api/v1/menu/categories",
+        {
+          menuId: starterMenu.id,
+          name: "Appetizers & Starters",
+        },
+      );
 
       await apiClient.post("/api/v1/menu/categories", {
         menuId: starterMenu.id,
@@ -423,37 +464,65 @@ export function MenuManagementPage() {
       });
 
       // Ensure Tandoor station exists
-      let tandoorStation = stations.find((s) => s.name.toLowerCase().includes("tandoor") || s.code === "GRILL-01");
+      let tandoorStation = stations.find(
+        (s) =>
+          s.name.toLowerCase().includes("tandoor") || s.code === "GRILL-01",
+      );
       if (!tandoorStation) {
-        tandoorStation = await apiClient.post<KitchenStationDto>("/api/v1/menu/stations", {
-          locationId: stations[0]?.locationId || "00000000-0000-0000-0000-000000000000",
-          name: "Tandoor",
-          code: "GRILL-01",
-          type: "GRILL",
-        });
+        tandoorStation = await apiClient.post<KitchenStationDto>(
+          "/api/v1/menu/stations",
+          {
+            locationId:
+              stations[0]?.locationId || "00000000-0000-0000-0000-000000000000",
+            name: "Tandoor",
+            code: "GRILL-01",
+            type: "GRILL",
+          },
+        );
       }
 
       // Ensure Spice Level modifier group exists
-      let spiceGroup = modifierGroups.find((g) => g.name.toLowerCase().includes("spice"));
+      let spiceGroup = modifierGroups.find((g) =>
+        g.name.toLowerCase().includes("spice"),
+      );
       if (!spiceGroup) {
-        spiceGroup = await apiClient.post<ModifierGroupDto>("/api/v1/menu/modifier-groups", {
-          name: "Spice Level",
-          isRequired: true,
-          minSelections: 1,
-          maxSelections: 1,
-          options: [
-            { name: "Mild", priceDeltaCents: 0, isDefault: true, isAvailable: true },
-            { name: "Medium", priceDeltaCents: 0, isDefault: false, isAvailable: true },
-            { name: "Spicy", priceDeltaCents: 50, isDefault: false, isAvailable: true },
-          ],
-        });
+        spiceGroup = await apiClient.post<ModifierGroupDto>(
+          "/api/v1/menu/modifier-groups",
+          {
+            name: "Spice Level",
+            isRequired: true,
+            minSelections: 1,
+            maxSelections: 1,
+            options: [
+              {
+                name: "Mild",
+                priceDeltaCents: 0,
+                isDefault: true,
+                isAvailable: true,
+              },
+              {
+                name: "Medium",
+                priceDeltaCents: 0,
+                isDefault: false,
+                isAvailable: true,
+              },
+              {
+                name: "Spicy",
+                priceDeltaCents: 50,
+                isDefault: false,
+                isAvailable: true,
+              },
+            ],
+          },
+        );
       }
 
       // Create Paneer Tikka dish assigned to Tandoor with Spice Level attached
       await apiClient.post("/api/v1/menu/items", {
         categoryId: appetizers.id,
         name: "Paneer Tikka",
-        description: "Fresh cottage cheese marinated in spiced yogurt and grilled in traditional tandoor oven",
+        description:
+          "Fresh cottage cheese marinated in spiced yogurt and grilled in traditional tandoor oven",
         sku: "APP-PANEER-01",
         basePriceCents: 1499,
         prepTimeMinutes: 15,
@@ -472,7 +541,8 @@ export function MenuManagementPage() {
   // Create Category Handler
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    const effectiveMenuId = targetCategoryMenuId || selectedMenuId || (menus[0]?.id ?? "");
+    const effectiveMenuId =
+      targetCategoryMenuId || selectedMenuId || (menus[0]?.id ?? "");
     if (!effectiveMenuId) {
       setError("Please create a menu first before adding categories.");
       return;
@@ -498,7 +568,8 @@ export function MenuManagementPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const locId = stations[0]?.locationId || "00000000-0000-0000-0000-000000000000";
+      const locId =
+        stations[0]?.locationId || "00000000-0000-0000-0000-000000000000";
       const created = await apiClient.post<KitchenStationDto>(
         "/api/v1/menu/stations",
         {
@@ -525,11 +596,14 @@ export function MenuManagementPage() {
     setIsSubmitting(true);
     try {
       const basisPoints = Math.round(parseFloat(newTaxRatePercent) * 100);
-      const created = await apiClient.post<TaxRateDto>("/api/v1/menu/tax-rates", {
-        name: newTaxName,
-        rateBasisPoints: basisPoints,
-        isDefault: taxRates.length === 0,
-      });
+      const created = await apiClient.post<TaxRateDto>(
+        "/api/v1/menu/tax-rates",
+        {
+          name: newTaxName,
+          rateBasisPoints: basisPoints,
+          isDefault: taxRates.length === 0,
+        },
+      );
       setTaxRates((prev) => [...prev, created]);
       setShowTaxModal(false);
       setNewTaxName("");
@@ -613,15 +687,17 @@ export function MenuManagementPage() {
             />
           </button>
 
-          {activeTab === "catalog" && menus.length > 0 && categories.length > 0 && (
-            <button
-              onClick={handleOpenCreateItem}
-              className="flex items-center space-x-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-none"
-            >
-              <Plus className="h-4 w-4" />
-              <span>New Menu Item</span>
-            </button>
-          )}
+          {activeTab === "catalog" &&
+            menus.length > 0 &&
+            categories.length > 0 && (
+              <button
+                onClick={handleOpenCreateItem}
+                className="flex items-center space-x-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-none"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New Menu Item</span>
+              </button>
+            )}
 
           {activeTab === "modifiers" && (
             <button
@@ -728,8 +804,8 @@ export function MenuManagementPage() {
       </div>
 
       {/* TAB 1: MENU CATALOG */}
-      {activeTab === "catalog" && (
-        menus.length === 0 ? (
+      {activeTab === "catalog" &&
+        (menus.length === 0 ? (
           /* Empty State when Organization has no Menus */
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center shadow-xs">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
@@ -739,8 +815,8 @@ export function MenuManagementPage() {
               No Menus Created Yet
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
-              Your restaurant catalog needs at least one menu to organize dish categories,
-              items, modifier groups, and kitchen routing.
+              Your restaurant catalog needs at least one menu to organize dish
+              categories, items, modifier groups, and kitchen routing.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <button
@@ -756,7 +832,10 @@ export function MenuManagementPage() {
                 className="flex items-center space-x-2 rounded-lg border border-indigo-200 bg-indigo-50/60 px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
               >
                 <Sparkles className="h-4 w-4 text-indigo-600" />
-                <span>Quick Start: Generate Starter Menu (Includes Paneer Tikka & Tandoor)</span>
+                <span>
+                  Quick Start: Generate Starter Menu (Includes Paneer Tikka &
+                  Tandoor)
+                </span>
               </button>
             </div>
           </div>
@@ -770,7 +849,9 @@ export function MenuManagementPage() {
                 </h3>
                 <button
                   onClick={() => {
-                    setTargetCategoryMenuId(selectedMenuId || menus[0]?.id || "");
+                    setTargetCategoryMenuId(
+                      selectedMenuId || menus[0]?.id || "",
+                    );
                     setShowCategoryModal(true);
                   }}
                   className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
@@ -787,7 +868,9 @@ export function MenuManagementPage() {
                     </p>
                     <button
                       onClick={() => {
-                        setTargetCategoryMenuId(selectedMenuId || menus[0]?.id || "");
+                        setTargetCategoryMenuId(
+                          selectedMenuId || menus[0]?.id || "",
+                        );
                         setShowCategoryModal(true);
                       }}
                       className="mt-2 text-xs font-semibold text-indigo-600 hover:underline"
@@ -868,11 +951,19 @@ export function MenuManagementPage() {
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {filteredItems.map((item) => {
-                    const assignedStation = stations.find((s) => s.id === item.kitchenStationId);
-                    const attachedGroups = (item.modifierGroups || []).map((mg: any) => {
-                      if (mg.modifierGroup) return mg.modifierGroup;
-                      return modifierGroups.find((g) => g.id === (mg.modifierGroupId || mg.id)) || mg;
-                    });
+                    const assignedStation = stations.find(
+                      (s) => s.id === item.kitchenStationId,
+                    );
+                    const attachedGroups = (item.modifierGroups || []).map(
+                      (mg: any) => {
+                        if (mg.modifierGroup) return mg.modifierGroup;
+                        return (
+                          modifierGroups.find(
+                            (g) => g.id === (mg.modifierGroupId || mg.id),
+                          ) || mg
+                        );
+                      },
+                    );
 
                     return (
                       <div
@@ -901,7 +992,9 @@ export function MenuManagementPage() {
                                 <Pencil className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => handleDeleteItem(item.id, item.name)}
+                                onClick={() =>
+                                  handleDeleteItem(item.id, item.name)
+                                }
                                 className="rounded-md p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
                                 title={`Delete ${item.name}`}
                                 aria-label={`Delete ${item.name}`}
@@ -931,7 +1024,8 @@ export function MenuManagementPage() {
                             {assignedStation && (
                               <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 font-semibold text-amber-800 border border-amber-200">
                                 <Flame className="mr-1 h-3 w-3 text-amber-600" />
-                                Station: {assignedStation.name} ({assignedStation.code})
+                                Station: {assignedStation.name} (
+                                {assignedStation.code})
                               </span>
                             )}
                             {attachedGroups.map((g: any, idx: number) => (
@@ -949,7 +1043,9 @@ export function MenuManagementPage() {
                         <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
                           <span
                             className={`inline-flex items-center text-xs font-semibold ${
-                              item.isAvailable ? "text-emerald-600" : "text-rose-600"
+                              item.isAvailable
+                                ? "text-emerald-600"
+                                : "text-rose-600"
                             }`}
                           >
                             {item.isAvailable ? (
@@ -983,8 +1079,7 @@ export function MenuManagementPage() {
               )}
             </div>
           </div>
-        )
-      )}
+        ))}
 
       {/* TAB 2: 86 STOCKBOARD */}
       {activeTab === "stockboard" && (
@@ -1009,7 +1104,8 @@ export function MenuManagementPage() {
                   <h4 className="font-semibold text-gray-900">{item.name}</h4>
                   <p className="text-xs text-gray-500">
                     ${(item.basePriceCents / 100).toFixed(2)} •{" "}
-                    {stations.find((s) => s.id === item.kitchenStationId)?.name || "Kitchen"}
+                    {stations.find((s) => s.id === item.kitchenStationId)
+                      ?.name || "Kitchen"}
                   </p>
                 </div>
 
@@ -1038,7 +1134,9 @@ export function MenuManagementPage() {
               Spice Level, Cooking Temperatures, Dressings, and Add-ons. Attach
               them to menu items to customize POS order taking.
             </div>
-            {!modifierGroups.some((g) => g.name.toLowerCase().includes("spice")) && (
+            {!modifierGroups.some((g) =>
+              g.name.toLowerCase().includes("spice"),
+            ) && (
               <button
                 onClick={handleCreateSpiceLevelGroup}
                 disabled={isSubmitting}
@@ -1057,8 +1155,8 @@ export function MenuManagementPage() {
                 No Modifier Groups Configured
               </h4>
               <p className="mx-auto mt-1 max-w-sm text-xs text-gray-500">
-                Create customizable options like "Spice Level" (Mild, Medium, Spicy)
-                to allow guests to customize their orders.
+                Create customizable options like "Spice Level" (Mild, Medium,
+                Spicy) to allow guests to customize their orders.
               </p>
               <div className="mt-4 flex justify-center space-x-3">
                 <button
@@ -1112,13 +1210,16 @@ export function MenuManagementPage() {
                               {group.isRequired ? "Required" : "Optional"}
                             </span>
                             <span className="rounded-md bg-blue-50 px-2 py-0.5 font-medium text-blue-700">
-                              Min: {group.minSelections} • Max: {group.maxSelections}
+                              Min: {group.minSelections} • Max:{" "}
+                              {group.maxSelections}
                             </span>
                           </div>
                         </div>
 
                         <button
-                          onClick={() => handleDeleteModifierGroup(group.id, group.name)}
+                          onClick={() =>
+                            handleDeleteModifierGroup(group.id, group.name)
+                          }
                           className="rounded-md p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
                           title={`Delete ${group.name}`}
                           aria-label={`Delete ${group.name}`}
@@ -1155,14 +1256,17 @@ export function MenuManagementPage() {
                               </div>
                             ))
                           ) : (
-                            <p className="text-xs text-gray-400 italic">No options listed</p>
+                            <p className="text-xs text-gray-400 italic">
+                              No options listed
+                            </p>
                           )}
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-4 border-t border-gray-100 pt-3 text-2xs text-gray-500">
-                      Attached to {attachedItems.length} dish{attachedItems.length === 1 ? "" : "es"}
+                      Attached to {attachedItems.length} dish
+                      {attachedItems.length === 1 ? "" : "es"}
                     </div>
                   </div>
                 );
@@ -1188,12 +1292,16 @@ export function MenuManagementPage() {
                   {st.type}
                 </span>
               </div>
-              <h4 className="mt-2 text-lg font-bold text-gray-900">{st.name}</h4>
+              <h4 className="mt-2 text-lg font-bold text-gray-900">
+                {st.name}
+              </h4>
               <p className="mt-1 text-xs text-gray-500">
                 {st.isExpo ? "Expo Finishing Station" : "Primary Line Station"}
               </p>
               <div className="mt-3 text-2xs text-gray-500">
-                Routing: {items.filter((it) => it.kitchenStationId === st.id).length} menu items
+                Routing:{" "}
+                {items.filter((it) => it.kitchenStationId === st.id).length}{" "}
+                menu items
               </div>
             </div>
           ))}
@@ -1421,12 +1529,15 @@ export function MenuManagementPage() {
                 </label>
                 {modifierGroups.length === 0 ? (
                   <p className="text-xs text-gray-400 italic">
-                    No modifier groups available. Create one in the "Modifier Groups" tab.
+                    No modifier groups available. Create one in the "Modifier
+                    Groups" tab.
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 gap-2 max-h-36 overflow-y-auto rounded-lg border border-gray-200 p-2.5 bg-gray-50/50">
                     {modifierGroups.map((group) => {
-                      const isChecked = selectedModifierGroupIds.includes(group.id);
+                      const isChecked = selectedModifierGroupIds.includes(
+                        group.id,
+                      );
                       return (
                         <label
                           key={group.id}
@@ -1441,7 +1552,10 @@ export function MenuManagementPage() {
                             checked={isChecked}
                             onChange={(e) => {
                               if (e.target.checked) {
-                                setSelectedModifierGroupIds((prev) => [...prev, group.id]);
+                                setSelectedModifierGroupIds((prev) => [
+                                  ...prev,
+                                  group.id,
+                                ]);
                               } else {
                                 setSelectedModifierGroupIds((prev) =>
                                   prev.filter((id) => id !== group.id),
@@ -1493,8 +1607,13 @@ export function MenuManagementPage() {
       {showModifierModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-900">New Modifier Group</h3>
-            <form onSubmit={handleCreateModifierGroup} className="mt-4 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
+              New Modifier Group
+            </h3>
+            <form
+              onSubmit={handleCreateModifierGroup}
+              className="mt-4 space-y-4"
+            >
               <div>
                 <label className="block text-xs font-medium text-gray-700">
                   Group Name
@@ -1584,7 +1703,9 @@ export function MenuManagementPage() {
                         onChange={(e) => {
                           const val = e.target.value;
                           setNewModGroupOptions((prev) =>
-                            prev.map((o, i) => (i === idx ? { ...o, name: val } : o)),
+                            prev.map((o, i) =>
+                              i === idx ? { ...o, name: val } : o,
+                            ),
                           );
                         }}
                         placeholder="Option name (e.g. Mild)"
@@ -1600,7 +1721,9 @@ export function MenuManagementPage() {
                           onChange={(e) => {
                             const val = e.target.value;
                             setNewModGroupOptions((prev) =>
-                              prev.map((o, i) => (i === idx ? { ...o, priceDelta: val } : o)),
+                              prev.map((o, i) =>
+                                i === idx ? { ...o, priceDelta: val } : o,
+                              ),
                             );
                           }}
                           placeholder="0.00"
@@ -1615,7 +1738,9 @@ export function MenuManagementPage() {
                           onChange={(e) => {
                             const checked = e.target.checked;
                             setNewModGroupOptions((prev) =>
-                              prev.map((o, i) => (i === idx ? { ...o, isDefault: checked } : o)),
+                              prev.map((o, i) =>
+                                i === idx ? { ...o, isDefault: checked } : o,
+                              ),
                             );
                           }}
                           className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
@@ -1627,7 +1752,9 @@ export function MenuManagementPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            setNewModGroupOptions((prev) => prev.filter((_, i) => i !== idx))
+                            setNewModGroupOptions((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
                           }
                           className="p-1 text-gray-400 hover:text-red-600"
                         >

@@ -14,4 +14,3 @@ apiRouter.use("/menu", menuRouter);
 apiRouter.use("/foh", fohRouter);
 apiRouter.use("/team", teamRouter);
 apiRouter.use("/orders", orderRouter);
-

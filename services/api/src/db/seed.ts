@@ -95,7 +95,8 @@ export const SYSTEM_PERMISSIONS = [
   {
     code: "table:manage",
     name: "Manage Floor Plan & Tables",
-    description: "Create, update, and configure dining rooms and physical table layouts",
+    description:
+      "Create, update, and configure dining rooms and physical table layouts",
     module: "foh",
   },
   {
@@ -274,7 +275,12 @@ export const SYSTEM_ROLES = [
     name: "Kitchen",
     description: "Back-of-house staff viewing orders and managing inventory",
     scope: "LOCATION" as const,
-    permissions: ["menu:view", "menu:86_toggle", "order:view", "inventory:view"],
+    permissions: [
+      "menu:view",
+      "menu:86_toggle",
+      "order:view",
+      "inventory:view",
+    ],
   },
   {
     name: "Viewer",

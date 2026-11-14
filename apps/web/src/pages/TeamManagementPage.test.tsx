@@ -30,9 +30,7 @@ describe("TeamManagementPage Component", () => {
         description: "Full access",
         scope: "ORGANIZATION",
       },
-      locations: [
-        { id: "loc-1", name: "Main Location", code: "MAIN" },
-      ],
+      locations: [{ id: "loc-1", name: "Main Location", code: "MAIN" }],
       invitedAt: new Date().toISOString(),
       joinedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -52,9 +50,7 @@ describe("TeamManagementPage Component", () => {
         description: "Front of house",
         scope: "LOCATION",
       },
-      locations: [
-        { id: "loc-1", name: "Main Location", code: "MAIN" },
-      ],
+      locations: [{ id: "loc-1", name: "Main Location", code: "MAIN" }],
       invitedAt: new Date().toISOString(),
       joinedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -63,9 +59,30 @@ describe("TeamManagementPage Component", () => {
   ];
 
   const mockRoles = [
-    { id: "role-1", organizationId: "org-1", name: "Owner", description: "All", isSystem: true, scope: "ORGANIZATION" },
-    { id: "role-2", organizationId: "org-1", name: "Server", description: "FoH", isSystem: true, scope: "LOCATION" },
-    { id: "role-3", organizationId: "org-1", name: "Kitchen", description: "BoH", isSystem: true, scope: "LOCATION" },
+    {
+      id: "role-1",
+      organizationId: "org-1",
+      name: "Owner",
+      description: "All",
+      isSystem: true,
+      scope: "ORGANIZATION",
+    },
+    {
+      id: "role-2",
+      organizationId: "org-1",
+      name: "Server",
+      description: "FoH",
+      isSystem: true,
+      scope: "LOCATION",
+    },
+    {
+      id: "role-3",
+      organizationId: "org-1",
+      name: "Kitchen",
+      description: "BoH",
+      isSystem: true,
+      scope: "LOCATION",
+    },
   ];
 
   const mockLocations = [
@@ -90,7 +107,8 @@ describe("TeamManagementPage Component", () => {
     vi.mocked(apiClient.get).mockImplementation((url: string) => {
       if (url === "/api/v1/team") return Promise.resolve(mockMembers);
       if (url === "/api/v1/team/roles") return Promise.resolve(mockRoles);
-      if (url === "/api/v1/team/locations") return Promise.resolve(mockLocations);
+      if (url === "/api/v1/team/locations")
+        return Promise.resolve(mockLocations);
       return Promise.resolve([]);
     });
   });
@@ -183,4 +201,3 @@ describe("TeamManagementPage Component", () => {
     });
   });
 });
-

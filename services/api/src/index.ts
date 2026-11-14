@@ -5,7 +5,10 @@ import { initRedis, closeRedis } from "./config/redis.js";
 import { initRateLimiters } from "./middleware/rate-limiter.js";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
-import { setSocketIO, registerSocketHandlers } from "./services/socket.service.js";
+import {
+  setSocketIO,
+  registerSocketHandlers,
+} from "./services/socket.service.js";
 
 async function bootstrap(): Promise<void> {
   // Ensure Redis connects successfully before rate limiters use it

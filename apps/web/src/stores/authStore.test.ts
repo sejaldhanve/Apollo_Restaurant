@@ -66,7 +66,9 @@ describe("authStore — Response Parsing & Error Robustness", () => {
     expect(state.refreshToken).toBe("valid-refresh-token");
     expect(state.currentOrgId).toBe("org-1");
     expect(state.error).toBeNull();
-    expect(localStorage.getItem("apollo_access_token")).toBe("valid.jwt.access");
+    expect(localStorage.getItem("apollo_access_token")).toBe(
+      "valid.jwt.access",
+    );
   });
 
   it("2. Incorrect Password: extracts backend 401 error message without crashing", async () => {
@@ -145,7 +147,9 @@ describe("authStore — Response Parsing & Error Robustness", () => {
     expect(state.isAuthenticated).toBe(false);
     // CRITICAL: Ensure the error is clean and never says "Unexpected end of JSON input"
     expect(state.error).not.toContain("Unexpected end of JSON input");
-    expect(state.error).toContain("Authentication failed (504 Gateway Timeout)");
+    expect(state.error).toContain(
+      "Authentication failed (504 Gateway Timeout)",
+    );
   });
 
   it("5. Non-JSON / HTML Response: handles gracefully without crashing JSON parser", async () => {
@@ -170,4 +174,3 @@ describe("authStore — Response Parsing & Error Robustness", () => {
     expect(state.error).toContain("Authentication failed (502 Bad Gateway)");
   });
 });
-

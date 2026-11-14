@@ -43,7 +43,9 @@ describe("MenuManagementPage Component", () => {
 
     expect(screen.getByText("Create First Menu")).toBeInTheDocument();
     expect(
-      screen.getByText("Quick Start: Generate Starter Menu (Includes Paneer Tikka & Tandoor)"),
+      screen.getByText(
+        "Quick Start: Generate Starter Menu (Includes Paneer Tikka & Tandoor)",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -113,7 +115,12 @@ describe("MenuManagementPage Component", () => {
     ];
 
     const mockStations = [
-      { id: "station-tandoor", name: "Tandoor", code: "GRILL-01", type: "GRILL" },
+      {
+        id: "station-tandoor",
+        name: "Tandoor",
+        code: "GRILL-01",
+        type: "GRILL",
+      },
     ];
 
     const mockModifierGroups = [
@@ -182,7 +189,9 @@ describe("MenuManagementPage Component", () => {
     fireEvent.change(stationSelect, { target: { value: "station-tandoor" } });
 
     // Attach Spice Level modifier group
-    const spiceCheckbox = screen.getByRole("checkbox", { name: /Spice Level/i });
+    const spiceCheckbox = screen.getByRole("checkbox", {
+      name: /Spice Level/i,
+    });
     fireEvent.click(spiceCheckbox);
 
     // Submit the update
@@ -238,7 +247,9 @@ describe("MenuManagementPage Component", () => {
     fireEvent.click(deleteBtn);
 
     await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith("/api/v1/menu/items/item-to-delete");
+      expect(apiClient.delete).toHaveBeenCalledWith(
+        "/api/v1/menu/items/item-to-delete",
+      );
     });
   });
 

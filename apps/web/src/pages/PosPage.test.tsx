@@ -79,8 +79,18 @@ describe("PosPage Component", () => {
           minSelections: 1,
           maxSelections: 1,
           options: [
-            { id: "opt-mild", name: "Mild", priceDeltaCents: 0, isAvailable: true },
-            { id: "opt-spicy", name: "Spicy", priceDeltaCents: 50, isAvailable: true },
+            {
+              id: "opt-mild",
+              name: "Mild",
+              priceDeltaCents: 0,
+              isAvailable: true,
+            },
+            {
+              id: "opt-spicy",
+              name: "Spicy",
+              priceDeltaCents: 50,
+              isAvailable: true,
+            },
           ],
         },
       ],
@@ -276,20 +286,24 @@ describe("PosPage Component", () => {
     setupMocks(mockMenuItemsJoinTable);
     render(<PosPage />);
 
-    await waitFor(() => expect(screen.getByText("Menu Items")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Menu Items")).toBeInTheDocument(),
+    );
     fireEvent.click(screen.getByText("Menu Items"));
-    await waitFor(() => expect(screen.getByText("Paneer Tikka")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Paneer Tikka")).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByText("Paneer Tikka"));
-    await waitFor(() => expect(screen.getByText("Add to Order")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Add to Order")).toBeInTheDocument(),
+    );
 
     // Try to add without selecting a required modifier
     fireEvent.click(screen.getByText("Add to Order"));
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/Spice Level.*is required/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Spice Level.*is required/i)).toBeInTheDocument();
     });
   });
 
@@ -297,9 +311,13 @@ describe("PosPage Component", () => {
     setupMocks(mockMenuItemsJoinTable);
     render(<PosPage />);
 
-    await waitFor(() => expect(screen.getByText("Menu Items")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Menu Items")).toBeInTheDocument(),
+    );
     fireEvent.click(screen.getByText("Menu Items"));
-    await waitFor(() => expect(screen.getByText("Paneer Tikka")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Paneer Tikka")).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByText("Paneer Tikka"));
     await waitFor(() => expect(screen.getByText("Mild")).toBeInTheDocument());
@@ -316,13 +334,19 @@ describe("PosPage Component", () => {
     setupMocks(mockMenuItemsJoinTable);
     render(<PosPage />);
 
-    await waitFor(() => expect(screen.getByText("Menu Items")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Menu Items")).toBeInTheDocument(),
+    );
     fireEvent.click(screen.getByText("Menu Items"));
-    await waitFor(() => expect(screen.getByText("Paneer Tikka")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Paneer Tikka")).toBeInTheDocument(),
+    );
 
     // Open modal
     fireEvent.click(screen.getByText("Paneer Tikka"));
-    await waitFor(() => expect(screen.getByText("Add to Order")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Add to Order")).toBeInTheDocument(),
+    );
 
     // Close modal via Cancel button
     fireEvent.click(screen.getByText("Cancel"));
@@ -365,9 +389,13 @@ describe("PosPage Component", () => {
 
     render(<PosPage />);
 
-    await waitFor(() => expect(screen.getByText("Menu Items")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Menu Items")).toBeInTheDocument(),
+    );
     fireEvent.click(screen.getByText("Menu Items"));
-    await waitFor(() => expect(screen.getByText("Garlic Naan")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Garlic Naan")).toBeInTheDocument(),
+    );
 
     // Clicking Garlic Naan (no modifiers) should add directly — no modal
     fireEvent.click(screen.getByText("Garlic Naan"));

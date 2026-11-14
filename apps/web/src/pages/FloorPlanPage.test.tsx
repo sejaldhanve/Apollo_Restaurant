@@ -37,7 +37,9 @@ describe("FloorPlanPage Component", () => {
     });
 
     expect(screen.getByText("Create Dining Area")).toBeInTheDocument();
-    expect(screen.getByText("⚡ Generate Starter Floor Plan")).toBeInTheDocument();
+    expect(
+      screen.getByText("⚡ Generate Starter Floor Plan"),
+    ).toBeInTheDocument();
   });
 
   it("renders dining areas, live status summary, and tables", async () => {

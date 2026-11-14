@@ -291,7 +291,10 @@ menuRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const menuId = req.query.menuId as string | undefined;
-      const categories = await MenuService.getCategories(req.organizationId!, menuId);
+      const categories = await MenuService.getCategories(
+        req.organizationId!,
+        menuId,
+      );
       res.json({ success: true, data: categories });
     } catch (err) {
       next(err);

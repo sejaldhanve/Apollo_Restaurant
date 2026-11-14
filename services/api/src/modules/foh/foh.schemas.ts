@@ -19,11 +19,7 @@ export const tableStatusEnum = z.enum([
   "BLOCKED",
 ]);
 
-export const sessionStatusEnum = z.enum([
-  "ACTIVE",
-  "COMPLETED",
-  "TRANSFERRED",
-]);
+export const sessionStatusEnum = z.enum(["ACTIVE", "COMPLETED", "TRANSFERRED"]);
 
 // ─── Dining Area Schemas ────────────────────────────────────────────────────
 
@@ -83,7 +79,9 @@ export const tableLayoutItemSchema = z.object({
 });
 
 export const updateTableLayoutSchema = z.object({
-  tables: z.array(tableLayoutItemSchema).min(1, "At least one table coordinate required"),
+  tables: z
+    .array(tableLayoutItemSchema)
+    .min(1, "At least one table coordinate required"),
 });
 
 // ─── Table Operation Schemas ────────────────────────────────────────────────
@@ -97,13 +95,15 @@ export const updateTableStatusSchema = z.object({
   status: tableStatusEnum,
 });
 
-export const transferTableSchema = z.object({
-  targetTableId: z.string().uuid().optional(),
-  targetServerUserId: z.string().uuid().optional(),
-}).refine(
-  (data) => data.targetTableId || data.targetServerUserId,
-  { message: "Must provide either targetTableId or targetServerUserId for transfer" }
-);
+export const transferTableSchema = z
+  .object({
+    targetTableId: z.string().uuid().optional(),
+    targetServerUserId: z.string().uuid().optional(),
+  })
+  .refine((data) => data.targetTableId || data.targetServerUserId, {
+    message:
+      "Must provide either targetTableId or targetServerUserId for transfer",
+  });
 
 export const assignServerSchema = z.object({
   serverUserId: z.string().uuid("Invalid server user ID").nullable(),
@@ -119,4 +119,3 @@ export type SeatTableInput = z.infer<typeof seatTableSchema>;
 export type UpdateTableStatusInput = z.infer<typeof updateTableStatusSchema>;
 export type TransferTableInput = z.infer<typeof transferTableSchema>;
 export type AssignServerInput = z.infer<typeof assignServerSchema>;
-

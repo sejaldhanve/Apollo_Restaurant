@@ -109,8 +109,22 @@ describe("Team & Staff Management Routes (/api/v1/team)", () => {
   describe("GET /api/v1/team/roles", () => {
     it("should return 200 with available organization roles", async () => {
       vi.spyOn(TeamService, "getRoles").mockResolvedValue([
-        { id: "r1", organizationId: mockOrgId, name: "Owner", description: "All", isSystem: true, scope: "ORGANIZATION" },
-        { id: "r2", organizationId: mockOrgId, name: "Server", description: "FoH", isSystem: true, scope: "LOCATION" },
+        {
+          id: "r1",
+          organizationId: mockOrgId,
+          name: "Owner",
+          description: "All",
+          isSystem: true,
+          scope: "ORGANIZATION",
+        },
+        {
+          id: "r2",
+          organizationId: mockOrgId,
+          name: "Server",
+          description: "FoH",
+          isSystem: true,
+          scope: "LOCATION",
+        },
       ]);
 
       const res = await request(app)
@@ -127,7 +141,12 @@ describe("Team & Staff Management Routes (/api/v1/team)", () => {
   describe("GET /api/v1/team/locations", () => {
     it("should return 200 with active locations", async () => {
       vi.spyOn(TeamService, "getLocations").mockResolvedValue([
-        { id: mockLocationId, name: "Main Dining", code: "MAIN", status: "ACTIVE" },
+        {
+          id: mockLocationId,
+          name: "Main Dining",
+          code: "MAIN",
+          status: "ACTIVE",
+        },
       ]);
 
       const res = await request(app)
@@ -201,7 +220,12 @@ describe("Team & Staff Management Routes (/api/v1/team)", () => {
       vi.spyOn(TeamService, "updateStaffRole").mockResolvedValue({
         id: mockMemberId,
         userId: "usr-2",
-        role: { id: mockRoleId, name: "Manager", description: null, scope: "LOCATION" } as any,
+        role: {
+          id: mockRoleId,
+          name: "Manager",
+          description: null,
+          scope: "LOCATION",
+        } as any,
       });
 
       const res = await request(app)

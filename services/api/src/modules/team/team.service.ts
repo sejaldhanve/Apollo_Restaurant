@@ -120,7 +120,9 @@ export class TeamService {
         where: { id: input.roleId, organizationId: orgId },
       });
       if (!role) {
-        throw AppError.notFound("Specified role not found in this organization");
+        throw AppError.notFound(
+          "Specified role not found in this organization",
+        );
       }
 
       // 2. Check if user already exists globally
@@ -139,7 +141,9 @@ export class TeamService {
           },
         });
         if (existingMember) {
-          throw AppError.conflict("User is already a member of this organization");
+          throw AppError.conflict(
+            "User is already a member of this organization",
+          );
         }
       } else {
         // Create new global user
@@ -174,8 +178,12 @@ export class TeamService {
           joinedAt: new Date(),
         },
         include: {
-          user: { select: { id: true, email: true, firstName: true, lastName: true } },
-          role: { select: { id: true, name: true, description: true, scope: true } },
+          user: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+          role: {
+            select: { id: true, name: true, description: true, scope: true },
+          },
         },
       });
 
@@ -300,8 +308,12 @@ export class TeamService {
         where: { id: membershipId },
         data: { roleId: targetRole.id },
         include: {
-          user: { select: { id: true, email: true, firstName: true, lastName: true } },
-          role: { select: { id: true, name: true, description: true, scope: true } },
+          user: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+          role: {
+            select: { id: true, name: true, description: true, scope: true },
+          },
         },
       });
 
@@ -375,8 +387,12 @@ export class TeamService {
         where: { id: membershipId },
         data: { status: input.status },
         include: {
-          user: { select: { id: true, email: true, firstName: true, lastName: true } },
-          role: { select: { id: true, name: true, description: true, scope: true } },
+          user: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+          role: {
+            select: { id: true, name: true, description: true, scope: true },
+          },
         },
       });
 
@@ -469,4 +485,3 @@ export class TeamService {
     });
   }
 }
-

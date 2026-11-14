@@ -46,16 +46,24 @@ export function PosPage() {
   const [guestCount, setGuestCount] = useState<number>(1);
   const [orderNotes, setOrderNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Modifier Modal state
-  const [customizingItem, setCustomizingItem] = useState<MenuItemDto | null>(null);
+  const [customizingItem, setCustomizingItem] = useState<MenuItemDto | null>(
+    null,
+  );
   const [selectedModifierOptions, setSelectedModifierOptions] = useState<
     { modifierGroupId: string; modifierOptionId: string }[]
   >([]);
-  const [modalSpecialInstructions, setModalSpecialInstructions] = useState<string>("");
+  const [modalSpecialInstructions, setModalSpecialInstructions] =
+    useState<string>("");
   const [modalQuantity, setModalQuantity] = useState<number>(1);
-  const [modalValidationError, setModalValidationError] = useState<string | null>(null);
+  const [modalValidationError, setModalValidationError] = useState<
+    string | null
+  >(null);
 
   // View state: 'tables' or 'menu'
   const [activeTab, setActiveTab] = useState<"tables" | "menu">("tables");
@@ -96,7 +104,8 @@ export function PosPage() {
         .filter((jt: any) => jt.modifierGroup)
         .map((jt: any) => ({
           id: jt.modifierGroup.id,
-          organizationId: jt.modifierGroup.organizationId ?? item.organizationId,
+          organizationId:
+            jt.modifierGroup.organizationId ?? item.organizationId,
           name: jt.modifierGroup.name,
           minSelections: jt.modifierGroup.minSelections ?? 0,
           maxSelections: jt.modifierGroup.maxSelections ?? 1,
@@ -213,7 +222,8 @@ export function PosPage() {
       const matchesSearch =
         !searchQuery ||
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        (item.description &&
+          item.description.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
     });
   }, [menuItems, selectedCategoryId, searchQuery]);
@@ -289,7 +299,10 @@ export function PosPage() {
       setCurrentOrder(updatedOrder);
       setCustomizingItem(null);
     } catch (err: any) {
-      setStatusMessage({ type: "error", text: err.message || "Failed to add item to order" });
+      setStatusMessage({
+        type: "error",
+        text: err.message || "Failed to add item to order",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -309,7 +322,10 @@ export function PosPage() {
       );
       setCurrentOrder(updated);
     } catch (err: any) {
-      setStatusMessage({ type: "error", text: err.message || "Failed to update quantity" });
+      setStatusMessage({
+        type: "error",
+        text: err.message || "Failed to update quantity",
+      });
     }
   };
 
@@ -322,7 +338,10 @@ export function PosPage() {
       );
       setCurrentOrder(updated);
     } catch (err: any) {
-      setStatusMessage({ type: "error", text: err.message || "Failed to remove item" });
+      setStatusMessage({
+        type: "error",
+        text: err.message || "Failed to remove item",
+      });
     }
   };
 
@@ -351,7 +370,10 @@ export function PosPage() {
       setActiveTab("tables");
       loadFloorPlan();
     } catch (err: any) {
-      setStatusMessage({ type: "error", text: err.message || "Failed to submit order to kitchen" });
+      setStatusMessage({
+        type: "error",
+        text: err.message || "Failed to submit order to kitchen",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -368,7 +390,10 @@ export function PosPage() {
         setCurrentOrder(null);
         setStatusMessage({ type: "success", text: "Draft order discarded." });
       } catch (err: any) {
-        setStatusMessage({ type: "error", text: err.message || "Failed to discard draft" });
+        setStatusMessage({
+          type: "error",
+          text: err.message || "Failed to discard draft",
+        });
       }
     }
   };
@@ -378,23 +403,37 @@ export function PosPage() {
     const isSingle = group.maxSelections === 1;
 
     setSelectedModifierOptions((prev) => {
-      const existingInGroup = prev.filter((s) => s.modifierGroupId === group.id);
-      const isAlreadySelected = existingInGroup.some((s) => s.modifierOptionId === optionId);
+      const existingInGroup = prev.filter(
+        (s) => s.modifierGroupId === group.id,
+      );
+      const isAlreadySelected = existingInGroup.some(
+        (s) => s.modifierOptionId === optionId,
+      );
 
       if (isSingle) {
         // Replace selection in this group
         const withoutGroup = prev.filter((s) => s.modifierGroupId !== group.id);
-        return [...withoutGroup, { modifierGroupId: group.id, modifierOptionId: optionId }];
+        return [
+          ...withoutGroup,
+          { modifierGroupId: group.id, modifierOptionId: optionId },
+        ];
       } else {
         if (isAlreadySelected) {
           return prev.filter(
-            (s) => !(s.modifierGroupId === group.id && s.modifierOptionId === optionId),
+            (s) =>
+              !(
+                s.modifierGroupId === group.id &&
+                s.modifierOptionId === optionId
+              ),
           );
         } else {
           if (existingInGroup.length >= group.maxSelections) {
             return prev; // Reached limit
           }
-          return [...prev, { modifierGroupId: group.id, modifierOptionId: optionId }];
+          return [
+            ...prev,
+            { modifierGroupId: group.id, modifierOptionId: optionId },
+          ];
         }
       }
     });
@@ -409,7 +448,9 @@ export function PosPage() {
         (s) => s.modifierGroupId === group.id,
       );
       if (group.isRequired && selections.length === 0) {
-        setModalValidationError(`"${group.name}" is required. Please make a selection.`);
+        setModalValidationError(
+          `"${group.name}" is required. Please make a selection.`,
+        );
         return;
       }
       if (group.minSelections > 0 && selections.length < group.minSelections) {
@@ -490,7 +531,9 @@ export function PosPage() {
               <div className="flex items-center space-x-1.5 rounded-md bg-indigo-50 px-2.5 py-1 text-indigo-700 font-medium">
                 <span>Selected: Table {selectedTable.tableNumber}</span>
                 {selectedTable.assignedServerName && (
-                  <span className="text-indigo-500">({selectedTable.assignedServerName})</span>
+                  <span className="text-indigo-500">
+                    ({selectedTable.assignedServerName})
+                  </span>
                 )}
                 <button
                   onClick={() => setSelectedTable(null)}
@@ -501,7 +544,9 @@ export function PosPage() {
                 </button>
               </div>
             ) : (
-              <span className="text-gray-500 italic">No table selected (Walk-in / Bar)</span>
+              <span className="text-gray-500 italic">
+                No table selected (Walk-in / Bar)
+              </span>
             )}
           </div>
         </div>
@@ -567,7 +612,8 @@ export function PosPage() {
               {filteredTables.map((table) => {
                 const isSelected = selectedTable?.id === table.id;
                 const statusColors = {
-                  AVAILABLE: "border-emerald-300 bg-emerald-50/40 text-emerald-800",
+                  AVAILABLE:
+                    "border-emerald-300 bg-emerald-50/40 text-emerald-800",
                   SEATED: "border-amber-300 bg-amber-50/50 text-amber-900",
                   ORDERED: "border-indigo-300 bg-indigo-50/50 text-indigo-900",
                   SERVED: "border-purple-300 bg-purple-50/50 text-purple-900",
@@ -584,8 +630,9 @@ export function PosPage() {
                     className={`flex flex-col justify-between rounded-xl border-2 p-3 text-left transition hover:shadow-md ${
                       isSelected
                         ? "border-indigo-600 bg-indigo-50/80 shadow-sm ring-2 ring-indigo-400"
-                        : statusColors[table.status as keyof typeof statusColors] ||
-                          "border-gray-200 bg-white"
+                        : statusColors[
+                            table.status as keyof typeof statusColors
+                          ] || "border-gray-200 bg-white"
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -597,12 +644,12 @@ export function PosPage() {
                           table.status === "AVAILABLE"
                             ? "bg-emerald-100 text-emerald-800"
                             : table.status === "SEATED"
-                            ? "bg-amber-100 text-amber-800"
-                            : table.status === "ORDERED"
-                            ? "bg-indigo-100 text-indigo-800"
-                            : table.status === "SERVED"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-gray-100 text-gray-700"
+                              ? "bg-amber-100 text-amber-800"
+                              : table.status === "ORDERED"
+                                ? "bg-indigo-100 text-indigo-800"
+                                : table.status === "SERVED"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : "bg-gray-100 text-gray-700"
                         }`}
                       >
                         {table.status}
@@ -675,14 +722,17 @@ export function PosPage() {
             <div className="flex-1 overflow-y-auto p-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                 {filteredMenuItems.map((item) => {
-                  const hasModifiers = item.modifierGroups && item.modifierGroups.length > 0;
+                  const hasModifiers =
+                    item.modifierGroups && item.modifierGroups.length > 0;
 
                   return (
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
                       className={`group relative flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-3.5 shadow-xs transition hover:border-indigo-400 hover:shadow-md cursor-pointer ${
-                        !item.isAvailable ? "opacity-60 bg-gray-50 cursor-not-allowed" : ""
+                        !item.isAvailable
+                          ? "opacity-60 bg-gray-50 cursor-not-allowed"
+                          : ""
                       }`}
                     >
                       <div>
@@ -753,7 +803,9 @@ export function PosPage() {
 
           <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
             <span>
-              {selectedTable ? `Table ${selectedTable.tableNumber}` : "Quick / Bar Order"}
+              {selectedTable
+                ? `Table ${selectedTable.tableNumber}`
+                : "Quick / Bar Order"}
             </span>
             <div className="flex items-center space-x-1">
               <span>Guests:</span>
@@ -763,7 +815,9 @@ export function PosPage() {
               >
                 -
               </button>
-              <span className="w-4 text-center font-semibold text-gray-800">{guestCount}</span>
+              <span className="w-4 text-center font-semibold text-gray-800">
+                {guestCount}
+              </span>
               <button
                 onClick={() => setGuestCount((g) => g + 1)}
                 className="h-5 w-5 rounded bg-gray-200 text-center font-bold text-gray-700 hover:bg-gray-300"
@@ -776,7 +830,7 @@ export function PosPage() {
 
         {/* Cart Line Items List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {(!currentOrder || currentOrder.items.length === 0) ? (
+          {!currentOrder || currentOrder.items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center text-gray-400 py-12">
               <Utensils className="h-8 w-8 stroke-1 text-gray-300 mb-2" />
               <p className="text-xs font-medium">Cart is empty</p>
@@ -791,7 +845,9 @@ export function PosPage() {
                 className="rounded-lg border border-gray-100 bg-gray-50/60 p-2.5 text-xs shadow-2xs space-y-1.5"
               >
                 <div className="flex items-start justify-between">
-                  <span className="font-semibold text-gray-900">{item.name}</span>
+                  <span className="font-semibold text-gray-900">
+                    {item.name}
+                  </span>
                   <span className="font-bold text-gray-800">
                     {formatCurrency(item.subtotalCents, currentOrder.currency)}
                   </span>
@@ -807,7 +863,11 @@ export function PosPage() {
                         </span>
                         {mod.priceDeltaCents > 0 && (
                           <span className="text-indigo-600">
-                            +{formatCurrency(mod.priceDeltaCents, currentOrder.currency)}
+                            +
+                            {formatCurrency(
+                              mod.priceDeltaCents,
+                              currentOrder.currency,
+                            )}
                           </span>
                         )}
                       </div>
@@ -825,7 +885,9 @@ export function PosPage() {
                 <div className="flex items-center justify-between pt-1 border-t border-gray-200/60">
                   <div className="flex items-center space-x-1.5">
                     <button
-                      onClick={() => handleUpdateItemQuantity(item.id, item.quantity - 1)}
+                      onClick={() =>
+                        handleUpdateItemQuantity(item.id, item.quantity - 1)
+                      }
                       className="flex h-5 w-5 items-center justify-center rounded bg-white border border-gray-300 text-gray-600 hover:bg-gray-100"
                     >
                       <Minus className="h-3 w-3" />
@@ -834,7 +896,9 @@ export function PosPage() {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => handleUpdateItemQuantity(item.id, item.quantity + 1)}
+                      onClick={() =>
+                        handleUpdateItemQuantity(item.id, item.quantity + 1)
+                      }
                       className="flex h-5 w-5 items-center justify-center rounded bg-white border border-gray-300 text-gray-600 hover:bg-gray-100"
                     >
                       <Plus className="h-3 w-3" />
@@ -894,7 +958,9 @@ export function PosPage() {
 
             <button
               onClick={handleSubmitOrder}
-              disabled={!currentOrder || currentOrder.items.length === 0 || isSubmitting}
+              disabled={
+                !currentOrder || currentOrder.items.length === 0 || isSubmitting
+              }
               className="flex flex-1 items-center justify-center space-x-2 rounded-lg bg-indigo-600 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50"
             >
               <Send className="h-3.5 w-3.5" />
@@ -911,7 +977,9 @@ export function PosPage() {
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-gray-200 p-4">
               <div>
-                <h3 className="text-sm font-bold text-gray-900">{customizingItem.name}</h3>
+                <h3 className="text-sm font-bold text-gray-900">
+                  {customizingItem.name}
+                </h3>
                 <p className="text-xs text-indigo-600 font-semibold mt-0.5">
                   Base Price: {formatCurrency(customizingItem.basePriceCents)}
                 </p>
@@ -940,10 +1008,15 @@ export function PosPage() {
                 );
 
                 return (
-                  <div key={group.id} className="rounded-xl border border-gray-200 p-3 bg-gray-50/50">
+                  <div
+                    key={group.id}
+                    className="rounded-xl border border-gray-200 p-3 bg-gray-50/50"
+                  >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs font-bold text-gray-900">{group.name}</span>
+                        <span className="text-xs font-bold text-gray-900">
+                          {group.name}
+                        </span>
                         {group.isRequired ? (
                           <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">
                             Required
@@ -983,7 +1056,9 @@ export function PosPage() {
                                 name={`group-${group.id}`}
                                 disabled={!option.isAvailable}
                                 checked={isSelected}
-                                onChange={() => handleToggleModifier(group, option.id)}
+                                onChange={() =>
+                                  handleToggleModifier(group, option.id)
+                                }
                                 className="text-indigo-600 focus:ring-indigo-500"
                               />
                               <span>{option.name}</span>
@@ -1018,7 +1093,9 @@ export function PosPage() {
 
               {/* Modal Quantity Selector */}
               <div className="flex items-center justify-between pt-2">
-                <span className="text-xs font-semibold text-gray-700">Quantity</span>
+                <span className="text-xs font-semibold text-gray-700">
+                  Quantity
+                </span>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setModalQuantity((q) => Math.max(1, q - 1))}
@@ -1042,7 +1119,9 @@ export function PosPage() {
             {/* Modal Footer */}
             <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 p-4">
               <div>
-                <span className="text-[11px] text-gray-500 block">Item Total</span>
+                <span className="text-[11px] text-gray-500 block">
+                  Item Total
+                </span>
                 <span className="text-base font-bold text-indigo-600">
                   {formatCurrency(modalTotalPriceCents)}
                 </span>

@@ -163,7 +163,9 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
         updatedAt: new Date().toISOString(),
       };
 
-      vi.spyOn(MenuService, "createKitchenStation").mockResolvedValue(mockStation as any);
+      vi.spyOn(MenuService, "createKitchenStation").mockResolvedValue(
+        mockStation as any,
+      );
 
       const res = await request(app)
         .post("/api/v1/menu/stations")
@@ -306,7 +308,9 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
         updatedAt: new Date().toISOString(),
       };
 
-      vi.spyOn(MenuService, "createCategory").mockResolvedValue(mockCategory as any);
+      vi.spyOn(MenuService, "createCategory").mockResolvedValue(
+        mockCategory as any,
+      );
 
       const res = await request(app)
         .post("/api/v1/menu/categories")
@@ -344,7 +348,9 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
         updatedAt: new Date().toISOString(),
       };
 
-      vi.spyOn(MenuService, "createMenuItem").mockResolvedValue(mockItem as any);
+      vi.spyOn(MenuService, "createMenuItem").mockResolvedValue(
+        mockItem as any,
+      );
 
       const res = await request(app)
         .post("/api/v1/menu/items")
@@ -395,7 +401,9 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
         updatedAt: new Date().toISOString(),
       };
 
-      vi.spyOn(MenuService, "updateMenuItem").mockResolvedValue(mockUpdatedItem as any);
+      vi.spyOn(MenuService, "updateMenuItem").mockResolvedValue(
+        mockUpdatedItem as any,
+      );
 
       const res = await request(app)
         .put(`/api/v1/menu/items/${mockItemId}`)
@@ -425,7 +433,9 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
 
   describe("DELETE /api/v1/menu/items/:id", () => {
     it("should return 200 when deleting menu item", async () => {
-      vi.spyOn(MenuService, "deleteMenuItem").mockResolvedValue({ success: true } as any);
+      vi.spyOn(MenuService, "deleteMenuItem").mockResolvedValue({
+        success: true,
+      } as any);
 
       const res = await request(app)
         .delete(`/api/v1/menu/items/${mockItemId}`)
@@ -483,14 +493,28 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
         maxSelections: 1,
         isRequired: true,
         options: [
-          { id: "opt-1", name: "Rare", priceDeltaCents: 0, isAvailable: true, isDefault: false },
-          { id: "opt-2", name: "Medium Rare", priceDeltaCents: 0, isAvailable: true, isDefault: true },
+          {
+            id: "opt-1",
+            name: "Rare",
+            priceDeltaCents: 0,
+            isAvailable: true,
+            isDefault: false,
+          },
+          {
+            id: "opt-2",
+            name: "Medium Rare",
+            priceDeltaCents: 0,
+            isAvailable: true,
+            isDefault: true,
+          },
         ],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      vi.spyOn(MenuService, "createModifierGroup").mockResolvedValue(mockGroup as any);
+      vi.spyOn(MenuService, "createModifierGroup").mockResolvedValue(
+        mockGroup as any,
+      );
 
       const res = await request(app)
         .post("/api/v1/menu/modifier-groups")
@@ -535,7 +559,9 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
     });
 
     it("should return 200 on DELETE /api/v1/menu/modifier-groups/:id", async () => {
-      vi.spyOn(MenuService, "deleteModifierGroup").mockResolvedValue({ success: true } as any);
+      vi.spyOn(MenuService, "deleteModifierGroup").mockResolvedValue({
+        success: true,
+      } as any);
 
       const res = await request(app)
         .delete(`/api/v1/menu/modifier-groups/${mockModifierGroupId}`)
@@ -563,7 +589,9 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
         updatedAt: new Date().toISOString(),
       };
 
-      vi.spyOn(MenuService, "upsertLocationOverride").mockResolvedValue(mockOverride as any);
+      vi.spyOn(MenuService, "upsertLocationOverride").mockResolvedValue(
+        mockOverride as any,
+      );
 
       const res = await request(app)
         .post("/api/v1/menu/overrides")
@@ -631,7 +659,9 @@ describe("Restaurant Configuration & Menu Management Routes", () => {
         .set("Authorization", `Bearer ${validToken}`);
 
       expect(res.status).toBe(400);
-      expect(res.body.error.message).toContain("Organization identifier is required");
+      expect(res.body.error.message).toContain(
+        "Organization identifier is required",
+      );
     });
   });
 });

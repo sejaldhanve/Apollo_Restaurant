@@ -29,4 +29,3 @@ describe("withTenantContext", () => {
     expect(mockTx.$executeRaw).toHaveBeenCalled();
   });
 });
-

@@ -19,7 +19,10 @@ export const createKitchenStationSchema = z.object({
     .string()
     .min(1, "Station code is required")
     .max(20)
-    .regex(/^[A-Za-z0-9_-]+$/, "Code must contain only letters, numbers, hyphens, and underscores"),
+    .regex(
+      /^[A-Za-z0-9_-]+$/,
+      "Code must contain only letters, numbers, hyphens, and underscores",
+    ),
   type: stationTypeEnum.default("KITCHEN"),
   isExpo: z.boolean().default(false),
 });
@@ -167,8 +170,12 @@ export const upsertLocationMenuOverrideSchema = z.object({
   isAvailable: z.boolean().nullable().optional(),
 });
 
-export type CreateKitchenStationInput = z.infer<typeof createKitchenStationSchema>;
-export type UpdateKitchenStationInput = z.infer<typeof updateKitchenStationSchema>;
+export type CreateKitchenStationInput = z.infer<
+  typeof createKitchenStationSchema
+>;
+export type UpdateKitchenStationInput = z.infer<
+  typeof updateKitchenStationSchema
+>;
 export type CreateTaxRateInput = z.infer<typeof createTaxRateSchema>;
 export type UpdateTaxRateInput = z.infer<typeof updateTaxRateSchema>;
 export type CreateMenuInput = z.infer<typeof createMenuSchema>;
@@ -177,10 +184,21 @@ export type CreateMenuCategoryInput = z.infer<typeof createMenuCategorySchema>;
 export type UpdateMenuCategoryInput = z.infer<typeof updateMenuCategorySchema>;
 export type CreateMenuItemInput = z.infer<typeof createMenuItemSchema>;
 export type UpdateMenuItemInput = z.infer<typeof updateMenuItemSchema>;
-export type UpdateItemAvailabilityInput = z.infer<typeof updateItemAvailabilitySchema>;
-export type CreateModifierGroupInput = z.infer<typeof createModifierGroupSchema>;
-export type UpdateModifierGroupInput = z.infer<typeof updateModifierGroupSchema>;
-export type CreateModifierOptionInput = z.infer<typeof createModifierOptionSchema>;
-export type UpdateModifierOptionInput = z.infer<typeof updateModifierOptionSchema>;
-export type UpsertLocationMenuOverrideInput = z.infer<typeof upsertLocationMenuOverrideSchema>;
-
+export type UpdateItemAvailabilityInput = z.infer<
+  typeof updateItemAvailabilitySchema
+>;
+export type CreateModifierGroupInput = z.infer<
+  typeof createModifierGroupSchema
+>;
+export type UpdateModifierGroupInput = z.infer<
+  typeof updateModifierGroupSchema
+>;
+export type CreateModifierOptionInput = z.infer<
+  typeof createModifierOptionSchema
+>;
+export type UpdateModifierOptionInput = z.infer<
+  typeof updateModifierOptionSchema
+>;
+export type UpsertLocationMenuOverrideInput = z.infer<
+  typeof upsertLocationMenuOverrideSchema
+>;

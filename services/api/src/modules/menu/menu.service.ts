@@ -41,7 +41,9 @@ export class MenuService {
           where: { organizationId: orgId },
         });
         if (!location) {
-          const org = await tx.organization.findUnique({ where: { id: orgId } });
+          const org = await tx.organization.findUnique({
+            where: { id: orgId },
+          });
           const orgName = org?.name || "Main";
           location = await tx.location.create({
             data: {
@@ -82,7 +84,11 @@ export class MenuService {
           actorId,
           entityType: "KitchenStation",
           entityId: station.id,
-          metadata: { name: station.name, code: station.code, type: station.type },
+          metadata: {
+            name: station.name,
+            code: station.code,
+            type: station.type,
+          },
           ipAddress: clientInfo?.ip,
           requestId: clientInfo?.requestId,
         },
@@ -122,10 +128,16 @@ export class MenuService {
 
       if (input.code && input.code !== station.code) {
         const existing = await tx.kitchenStation.findFirst({
-          where: { locationId: station.locationId, code: input.code, id: { not: stationId } },
+          where: {
+            locationId: station.locationId,
+            code: input.code,
+            id: { not: stationId },
+          },
         });
         if (existing) {
-          throw AppError.conflict(`Kitchen station with code '${input.code}' already exists`);
+          throw AppError.conflict(
+            `Kitchen station with code '${input.code}' already exists`,
+          );
         }
       }
 
@@ -135,7 +147,9 @@ export class MenuService {
           ...(input.name ? { name: input.name } : {}),
           ...(input.code ? { code: input.code } : {}),
           ...(input.type ? { type: input.type } : {}),
-          ...(typeof input.isExpo === "boolean" ? { isExpo: input.isExpo } : {}),
+          ...(typeof input.isExpo === "boolean"
+            ? { isExpo: input.isExpo }
+            : {}),
         },
       });
 
@@ -224,7 +238,10 @@ export class MenuService {
           actorId,
           entityType: "TaxRate",
           entityId: taxRate.id,
-          metadata: { name: taxRate.name, rateBasisPoints: taxRate.rateBasisPoints },
+          metadata: {
+            name: taxRate.name,
+            rateBasisPoints: taxRate.rateBasisPoints,
+          },
           ipAddress: clientInfo?.ip,
           requestId: clientInfo?.requestId,
         },
@@ -261,7 +278,11 @@ export class MenuService {
 
       if (input.isDefault) {
         await tx.taxRate.updateMany({
-          where: { organizationId: orgId, isDefault: true, id: { not: taxRateId } },
+          where: {
+            organizationId: orgId,
+            isDefault: true,
+            id: { not: taxRateId },
+          },
           data: { isDefault: false },
         });
       }
@@ -273,7 +294,9 @@ export class MenuService {
           ...(typeof input.rateBasisPoints === "number"
             ? { rateBasisPoints: input.rateBasisPoints }
             : {}),
-          ...(typeof input.isDefault === "boolean" ? { isDefault: input.isDefault } : {}),
+          ...(typeof input.isDefault === "boolean"
+            ? { isDefault: input.isDefault }
+            : {}),
         },
       });
 
@@ -447,8 +470,12 @@ export class MenuService {
         where: { id: menuId },
         data: {
           ...(input.name ? { name: input.name } : {}),
-          ...(typeof input.description !== "undefined" ? { description: input.description } : {}),
-          ...(typeof input.isActive === "boolean" ? { isActive: input.isActive } : {}),
+          ...(typeof input.description !== "undefined"
+            ? { description: input.description }
+            : {}),
+          ...(typeof input.isActive === "boolean"
+            ? { isActive: input.isActive }
+            : {}),
           ...(typeof input.schedule !== "undefined"
             ? { schedule: input.schedule as Prisma.InputJsonValue }
             : {}),
@@ -588,9 +615,15 @@ export class MenuService {
         where: { id: categoryId },
         data: {
           ...(input.name ? { name: input.name } : {}),
-          ...(typeof input.description !== "undefined" ? { description: input.description } : {}),
-          ...(typeof input.sortOrder === "number" ? { sortOrder: input.sortOrder } : {}),
-          ...(typeof input.isActive === "boolean" ? { isActive: input.isActive } : {}),
+          ...(typeof input.description !== "undefined"
+            ? { description: input.description }
+            : {}),
+          ...(typeof input.sortOrder === "number"
+            ? { sortOrder: input.sortOrder }
+            : {}),
+          ...(typeof input.isActive === "boolean"
+            ? { isActive: input.isActive }
+            : {}),
         },
       });
 
@@ -667,7 +700,9 @@ export class MenuService {
           where: { id: input.kitchenStationId, organizationId: orgId },
         });
         if (!station) {
-          throw AppError.notFound("Kitchen station not found in this organization");
+          throw AppError.notFound(
+            "Kitchen station not found in this organization",
+          );
         }
       }
 
@@ -730,7 +765,11 @@ export class MenuService {
     });
   }
 
-  static async getMenuItems(orgId: string, categoryId?: string, locationId?: string) {
+  static async getMenuItems(
+    orgId: string,
+    categoryId?: string,
+    locationId?: string,
+  ) {
     return withTenantContext(orgId, async (tx) => {
       const items = await tx.menuItem.findMany({
         where: {
@@ -839,21 +878,29 @@ export class MenuService {
         data: {
           ...(input.categoryId ? { categoryId: input.categoryId } : {}),
           ...(input.name ? { name: input.name } : {}),
-          ...(typeof input.description !== "undefined" ? { description: input.description } : {}),
+          ...(typeof input.description !== "undefined"
+            ? { description: input.description }
+            : {}),
           ...(typeof input.sku !== "undefined" ? { sku: input.sku } : {}),
           ...(typeof input.basePriceCents === "number"
             ? { basePriceCents: input.basePriceCents }
             : {}),
-          ...(typeof input.isAvailable === "boolean" ? { isAvailable: input.isAvailable } : {}),
+          ...(typeof input.isAvailable === "boolean"
+            ? { isAvailable: input.isAvailable }
+            : {}),
           ...(typeof input.prepTimeMinutes === "number"
             ? { prepTimeMinutes: input.prepTimeMinutes }
             : {}),
-          ...(typeof input.calories !== "undefined" ? { calories: input.calories } : {}),
+          ...(typeof input.calories !== "undefined"
+            ? { calories: input.calories }
+            : {}),
           ...(input.allergens ? { allergens: input.allergens } : {}),
           ...(typeof input.kitchenStationId !== "undefined"
             ? { kitchenStationId: input.kitchenStationId }
             : {}),
-          ...(typeof input.taxRateId !== "undefined" ? { taxRateId: input.taxRateId } : {}),
+          ...(typeof input.taxRateId !== "undefined"
+            ? { taxRateId: input.taxRateId }
+            : {}),
         },
       });
 
@@ -939,7 +986,9 @@ export class MenuService {
 
       await AuditService.log(
         {
-          action: input.isAvailable ? "menu_item:86_cleared" : "menu_item:86_set",
+          action: input.isAvailable
+            ? "menu_item:86_cleared"
+            : "menu_item:86_set",
           organizationId: orgId,
           actorId,
           entityType: "MenuItem",
@@ -1039,7 +1088,10 @@ export class MenuService {
           actorId,
           entityType: "ModifierGroup",
           entityId: group.id,
-          metadata: { name: group.name, optionsCount: input.options?.length ?? 0 },
+          metadata: {
+            name: group.name,
+            optionsCount: input.options?.length ?? 0,
+          },
           ipAddress: clientInfo?.ip,
           requestId: clientInfo?.requestId,
         },
@@ -1090,7 +1142,9 @@ export class MenuService {
           ...(typeof input.maxSelections === "number"
             ? { maxSelections: input.maxSelections }
             : {}),
-          ...(typeof input.isRequired === "boolean" ? { isRequired: input.isRequired } : {}),
+          ...(typeof input.isRequired === "boolean"
+            ? { isRequired: input.isRequired }
+            : {}),
         },
         include: { options: true },
       });
@@ -1159,7 +1213,9 @@ export class MenuService {
         where: { id: groupId, organizationId: orgId },
       });
       if (!group) {
-        throw AppError.notFound("Modifier group not found in this organization");
+        throw AppError.notFound(
+          "Modifier group not found in this organization",
+        );
       }
 
       const option = await tx.modifierOption.create({
@@ -1180,7 +1236,10 @@ export class MenuService {
           actorId,
           entityType: "ModifierOption",
           entityId: option.id,
-          metadata: { name: option.name, priceDeltaCents: option.priceDeltaCents },
+          metadata: {
+            name: option.name,
+            priceDeltaCents: option.priceDeltaCents,
+          },
           ipAddress: clientInfo?.ip,
           requestId: clientInfo?.requestId,
         },
@@ -1213,8 +1272,12 @@ export class MenuService {
           ...(typeof input.priceDeltaCents === "number"
             ? { priceDeltaCents: input.priceDeltaCents }
             : {}),
-          ...(typeof input.isAvailable === "boolean" ? { isAvailable: input.isAvailable } : {}),
-          ...(typeof input.isDefault === "boolean" ? { isDefault: input.isDefault } : {}),
+          ...(typeof input.isAvailable === "boolean"
+            ? { isAvailable: input.isAvailable }
+            : {}),
+          ...(typeof input.isDefault === "boolean"
+            ? { isDefault: input.isDefault }
+            : {}),
         },
       });
 
@@ -1304,7 +1367,9 @@ export class MenuService {
           ...(typeof input.overridePriceCents !== "undefined"
             ? { overridePriceCents: input.overridePriceCents }
             : {}),
-          ...(typeof input.isAvailable !== "undefined" ? { isAvailable: input.isAvailable } : {}),
+          ...(typeof input.isAvailable !== "undefined"
+            ? { isAvailable: input.isAvailable }
+            : {}),
         },
         create: {
           organizationId: orgId,
@@ -1347,4 +1412,3 @@ export class MenuService {
     });
   }
 }
-

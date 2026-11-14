@@ -24,7 +24,9 @@ describe("FoHService Unit Tests", () => {
   it("getFloorPlan returns dining areas and tables with active session info", async () => {
     const mockTx = {
       location: {
-        findFirst: vi.fn().mockResolvedValue({ id: locId, organizationId: orgId }),
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: locId, organizationId: orgId }),
       },
       diningArea: {
         findMany: vi.fn().mockResolvedValue([
@@ -81,7 +83,9 @@ describe("FoHService Unit Tests", () => {
       },
     };
 
-    vi.mocked(withTenantContext).mockImplementation(async (_id, fn) => fn(mockTx as any));
+    vi.mocked(withTenantContext).mockImplementation(async (_id, fn) =>
+      fn(mockTx as any),
+    );
 
     const result = await FoHService.getFloorPlan(orgId, locId);
 
@@ -98,14 +102,20 @@ describe("FoHService Unit Tests", () => {
   it("createDiningArea throws conflict if area name already exists at location", async () => {
     const mockTx = {
       location: {
-        findFirst: vi.fn().mockResolvedValue({ id: locId, organizationId: orgId }),
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: locId, organizationId: orgId }),
       },
       diningArea: {
-        findFirst: vi.fn().mockResolvedValue({ id: "existing-area", name: "Patio" }),
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: "existing-area", name: "Patio" }),
       },
     };
 
-    vi.mocked(withTenantContext).mockImplementation(async (_id, fn) => fn(mockTx as any));
+    vi.mocked(withTenantContext).mockImplementation(async (_id, fn) =>
+      fn(mockTx as any),
+    );
 
     await expect(
       FoHService.createDiningArea(orgId, actorId, {
@@ -127,11 +137,15 @@ describe("FoHService Unit Tests", () => {
         }),
       },
       tableSession: {
-        findFirst: vi.fn().mockResolvedValue({ id: "active-sess-1", status: "ACTIVE" }),
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: "active-sess-1", status: "ACTIVE" }),
       },
     };
 
-    vi.mocked(withTenantContext).mockImplementation(async (_id, fn) => fn(mockTx as any));
+    vi.mocked(withTenantContext).mockImplementation(async (_id, fn) =>
+      fn(mockTx as any),
+    );
 
     await expect(
       FoHService.seatTable(orgId, actorId, "tbl-1", { guestCount: 2 }),
@@ -156,7 +170,9 @@ describe("FoHService Unit Tests", () => {
       },
     };
 
-    vi.mocked(withTenantContext).mockImplementation(async (_id, fn) => fn(mockTx as any));
+    vi.mocked(withTenantContext).mockImplementation(async (_id, fn) =>
+      fn(mockTx as any),
+    );
 
     const result = await FoHService.updateTableStatus(orgId, actorId, "tbl-1", {
       status: "DIRTY",
@@ -169,4 +185,3 @@ describe("FoHService Unit Tests", () => {
     expect(result.status).toBe("DIRTY");
   });
 });
-

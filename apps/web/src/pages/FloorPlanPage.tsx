@@ -54,11 +54,15 @@ export function FloorPlanPage() {
   const [newMaxCovers, setNewMaxCovers] = useState<number>(4);
   const [seatGuestCount, setSeatGuestCount] = useState<number>(2);
   const [seatServerUserId, setSeatServerUserId] = useState<string>("");
-  const [transferTargetTableId, setTransferTargetTableId] = useState<string>("");
+  const [transferTargetTableId, setTransferTargetTableId] =
+    useState<string>("");
 
   // Dragging state in Designer Mode
   const [draggingTableId, setDraggingTableId] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
 
   const loadFloorPlan = async () => {
     if (!currentOrgId) return;
@@ -78,7 +82,8 @@ export function FloorPlanPage() {
       setTables(res.tables);
 
       try {
-        const staffRes = await apiClient.get<StaffMemberDto[]>("/api/v1/foh/staff");
+        const staffRes =
+          await apiClient.get<StaffMemberDto[]>("/api/v1/foh/staff");
         if (Array.isArray(staffRes)) {
           setStaffMembers(staffRes);
         }
@@ -87,7 +92,10 @@ export function FloorPlanPage() {
       }
 
       if (res.diningAreas.length > 0) {
-        if (!activeAreaId || !res.diningAreas.some((a) => a.id === activeAreaId)) {
+        if (
+          !activeAreaId ||
+          !res.diningAreas.some((a) => a.id === activeAreaId)
+        ) {
           setActiveAreaId(res.diningAreas[0]!.id);
         }
       } else {
@@ -130,10 +138,15 @@ export function FloorPlanPage() {
   };
 
   // Section Server Assignment Handler
-  const handleAssignSectionServer = async (areaId: string, serverUserId: string | null) => {
+  const handleAssignSectionServer = async (
+    areaId: string,
+    serverUserId: string | null,
+  ) => {
     setIsSubmitting(true);
     try {
-      await apiClient.patch(`/api/v1/foh/dining-areas/${areaId}/server`, { serverUserId });
+      await apiClient.patch(`/api/v1/foh/dining-areas/${areaId}/server`, {
+        serverUserId,
+      });
       await loadFloorPlan();
     } catch (err: any) {
       setError(err.message || "Failed to assign server to section");
@@ -143,10 +156,15 @@ export function FloorPlanPage() {
   };
 
   // Table Server Assignment Handler
-  const handleAssignTableServer = async (tableId: string, serverUserId: string | null) => {
+  const handleAssignTableServer = async (
+    tableId: string,
+    serverUserId: string | null,
+  ) => {
     setIsSubmitting(true);
     try {
-      await apiClient.patch(`/api/v1/foh/tables/${tableId}/server`, { serverUserId });
+      await apiClient.patch(`/api/v1/foh/tables/${tableId}/server`, {
+        serverUserId,
+      });
       await loadFloorPlan();
       if (selectedTable && selectedTable.id === tableId) {
         const updatedStaff = staffMembers.find((s) => s.id === serverUserId);
@@ -173,19 +191,76 @@ export function FloorPlanPage() {
   const handleGenerateStarterFloorPlan = async () => {
     setIsSubmitting(true);
     try {
-      const area = await apiClient.post<DiningAreaDto>("/api/v1/foh/dining-areas", {
-        locationId: locationId || "00000000-0000-0000-0000-000000000000",
-        name: "Main Dining Room",
-        sortOrder: 0,
-      });
+      const area = await apiClient.post<DiningAreaDto>(
+        "/api/v1/foh/dining-areas",
+        {
+          locationId: locationId || "00000000-0000-0000-0000-000000000000",
+          name: "Main Dining Room",
+          sortOrder: 0,
+        },
+      );
 
       const starterTables = [
-        { tableNumber: "T1", shape: "SQUARE" as TableShape, minCovers: 1, maxCovers: 2, posX: 60, posY: 60, width: 90, height: 90 },
-        { tableNumber: "T2", shape: "RECTANGLE" as TableShape, minCovers: 2, maxCovers: 4, posX: 200, posY: 60, width: 130, height: 90 },
-        { tableNumber: "T3", shape: "ROUND" as TableShape, minCovers: 2, maxCovers: 4, posX: 380, posY: 60, width: 100, height: 100 },
-        { tableNumber: "T4", shape: "BOOTH" as TableShape, minCovers: 4, maxCovers: 6, posX: 60, posY: 220, width: 150, height: 100 },
-        { tableNumber: "T5", shape: "RECTANGLE" as TableShape, minCovers: 2, maxCovers: 4, posX: 260, posY: 220, width: 130, height: 90 },
-        { tableNumber: "B1", shape: "BAR_STOOL" as TableShape, minCovers: 1, maxCovers: 1, posX: 440, posY: 240, width: 70, height: 70 },
+        {
+          tableNumber: "T1",
+          shape: "SQUARE" as TableShape,
+          minCovers: 1,
+          maxCovers: 2,
+          posX: 60,
+          posY: 60,
+          width: 90,
+          height: 90,
+        },
+        {
+          tableNumber: "T2",
+          shape: "RECTANGLE" as TableShape,
+          minCovers: 2,
+          maxCovers: 4,
+          posX: 200,
+          posY: 60,
+          width: 130,
+          height: 90,
+        },
+        {
+          tableNumber: "T3",
+          shape: "ROUND" as TableShape,
+          minCovers: 2,
+          maxCovers: 4,
+          posX: 380,
+          posY: 60,
+          width: 100,
+          height: 100,
+        },
+        {
+          tableNumber: "T4",
+          shape: "BOOTH" as TableShape,
+          minCovers: 4,
+          maxCovers: 6,
+          posX: 60,
+          posY: 220,
+          width: 150,
+          height: 100,
+        },
+        {
+          tableNumber: "T5",
+          shape: "RECTANGLE" as TableShape,
+          minCovers: 2,
+          maxCovers: 4,
+          posX: 260,
+          posY: 220,
+          width: 130,
+          height: 90,
+        },
+        {
+          tableNumber: "B1",
+          shape: "BAR_STOOL" as TableShape,
+          minCovers: 1,
+          maxCovers: 1,
+          posX: 440,
+          posY: 240,
+          width: 70,
+          height: 70,
+        },
       ];
 
       for (const t of starterTables) {
@@ -336,8 +411,14 @@ export function FloorPlanPage() {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!designerMode || !draggingTableId) return;
     const canvas = e.currentTarget.getBoundingClientRect();
-    const newX = Math.max(0, Math.min(canvas.width - 80, e.clientX - canvas.left - dragOffset.x));
-    const newY = Math.max(0, Math.min(canvas.height - 80, e.clientY - canvas.top - dragOffset.y));
+    const newX = Math.max(
+      0,
+      Math.min(canvas.width - 80, e.clientX - canvas.left - dragOffset.x),
+    );
+    const newY = Math.max(
+      0,
+      Math.min(canvas.height - 80, e.clientY - canvas.top - dragOffset.y),
+    );
 
     // Snap to 10px grid
     const snappedX = Math.round(newX / 10) * 10;
@@ -453,7 +534,8 @@ export function FloorPlanPage() {
             </span>
           </div>
           <p className="mt-1 text-sm text-gray-500">
-            Live seating state machine, server station assignments, and interactive 2D floor designer.
+            Live seating state machine, server station assignments, and
+            interactive 2D floor designer.
           </p>
         </div>
 
@@ -506,7 +588,9 @@ export function FloorPlanPage() {
             className="rounded-lg border border-gray-300 bg-white p-2 text-gray-600 shadow-xs hover:bg-gray-50 disabled:opacity-50"
             title="Refresh Floor Plan"
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+            />
           </button>
         </div>
       </div>
@@ -522,48 +606,72 @@ export function FloorPlanPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 shadow-xs">
           <div>
-            <p className="text-2xs font-bold uppercase tracking-wider text-emerald-800">Available</p>
-            <p className="text-xl font-extrabold text-emerald-900">{summaryCounts.available}</p>
+            <p className="text-2xs font-bold uppercase tracking-wider text-emerald-800">
+              Available
+            </p>
+            <p className="text-xl font-extrabold text-emerald-900">
+              {summaryCounts.available}
+            </p>
           </div>
           <div className="h-3 w-3 rounded-full bg-emerald-500" />
         </div>
 
         <div className="flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50/70 p-3 shadow-xs">
           <div>
-            <p className="text-2xs font-bold uppercase tracking-wider text-indigo-800">Seated</p>
-            <p className="text-xl font-extrabold text-indigo-900">{summaryCounts.seated}</p>
+            <p className="text-2xs font-bold uppercase tracking-wider text-indigo-800">
+              Seated
+            </p>
+            <p className="text-xl font-extrabold text-indigo-900">
+              {summaryCounts.seated}
+            </p>
           </div>
           <div className="h-3 w-3 rounded-full bg-indigo-600" />
         </div>
 
         <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/70 p-3 shadow-xs">
           <div>
-            <p className="text-2xs font-bold uppercase tracking-wider text-amber-800">Ordered</p>
-            <p className="text-xl font-extrabold text-amber-900">{summaryCounts.ordered}</p>
+            <p className="text-2xs font-bold uppercase tracking-wider text-amber-800">
+              Ordered
+            </p>
+            <p className="text-xl font-extrabold text-amber-900">
+              {summaryCounts.ordered}
+            </p>
           </div>
           <div className="h-3 w-3 rounded-full bg-amber-500" />
         </div>
 
         <div className="flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50/70 p-3 shadow-xs">
           <div>
-            <p className="text-2xs font-bold uppercase tracking-wider text-orange-800">Served</p>
-            <p className="text-xl font-extrabold text-orange-900">{summaryCounts.served}</p>
+            <p className="text-2xs font-bold uppercase tracking-wider text-orange-800">
+              Served
+            </p>
+            <p className="text-xl font-extrabold text-orange-900">
+              {summaryCounts.served}
+            </p>
           </div>
           <div className="h-3 w-3 rounded-full bg-orange-500" />
         </div>
 
         <div className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50/70 p-3 shadow-xs">
           <div>
-            <p className="text-2xs font-bold uppercase tracking-wider text-purple-800">Payment Pending</p>
-            <p className="text-xl font-extrabold text-purple-900">{summaryCounts.payment}</p>
+            <p className="text-2xs font-bold uppercase tracking-wider text-purple-800">
+              Payment Pending
+            </p>
+            <p className="text-xl font-extrabold text-purple-900">
+              {summaryCounts.payment}
+            </p>
           </div>
           <div className="h-3 w-3 rounded-full bg-purple-600" />
         </div>
 
         <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/70 p-3 shadow-xs">
           <div>
-            <p className="text-2xs font-bold uppercase tracking-wider text-rose-800">Dirty / Bus</p>
-            <p className="text-xl font-extrabold text-rose-900">{summaryCounts.dirty}</p>
+            <p className="text-2xs font-bold uppercase tracking-wider text-rose-800">
+              Dirty / Bus
+            </p>
+            <p className="text-xl font-extrabold text-rose-900">
+              {summaryCounts.dirty}
+            </p>
           </div>
           <div className="h-3 w-3 rounded-full bg-rose-500" />
         </div>
@@ -599,10 +707,17 @@ export function FloorPlanPage() {
           {activeArea && (
             <div className="mb-2 sm:mb-0 flex items-center space-x-2 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-1.5 text-xs">
               <UserCheck className="h-4 w-4 text-indigo-600 shrink-0" />
-              <span className="font-semibold text-gray-700 whitespace-nowrap">Section Server:</span>
+              <span className="font-semibold text-gray-700 whitespace-nowrap">
+                Section Server:
+              </span>
               <select
                 value={activeArea.assignedServerId || ""}
-                onChange={(e) => handleAssignSectionServer(activeArea.id, e.target.value || null)}
+                onChange={(e) =>
+                  handleAssignSectionServer(
+                    activeArea.id,
+                    e.target.value || null,
+                  )
+                }
                 disabled={isSubmitting}
                 className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-800 shadow-2xs focus:border-indigo-500 focus:outline-none"
               >
@@ -629,8 +744,8 @@ export function FloorPlanPage() {
             No Floor Plan Configured
           </h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
-            Configure dining rooms, seating zones, and tables to start seating guests,
-            tracking dining durations, and routing orders.
+            Configure dining rooms, seating zones, and tables to start seating
+            guests, tracking dining durations, and routing orders.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
@@ -656,7 +771,10 @@ export function FloorPlanPage() {
             <div className="mb-2 flex items-center justify-between rounded-lg bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-800 border border-amber-300">
               <div className="flex items-center space-x-2">
                 <Move className="h-4 w-4 text-amber-600" />
-                <span>Designer Mode Active: Drag tables to reposition on the floor canvas. Click Save Layout when finished.</span>
+                <span>
+                  Designer Mode Active: Drag tables to reposition on the floor
+                  canvas. Click Save Layout when finished.
+                </span>
               </div>
             </div>
           )}
@@ -688,7 +806,8 @@ export function FloorPlanPage() {
             ) : (
               areaTables.map((table) => {
                 const config = getStatusConfig(table.status);
-                const isRound = table.shape === "ROUND" || table.shape === "BAR_STOOL";
+                const isRound =
+                  table.shape === "ROUND" || table.shape === "BAR_STOOL";
 
                 return (
                   <div
@@ -697,8 +816,14 @@ export function FloorPlanPage() {
                     onClick={() => {
                       if (!designerMode) {
                         setSelectedTable(table);
-                        const area = diningAreas.find((a) => a.id === table.diningAreaId);
-                        setSeatServerUserId(table.assignedServerId || area?.assignedServerId || "");
+                        const area = diningAreas.find(
+                          (a) => a.id === table.diningAreaId,
+                        );
+                        setSeatServerUserId(
+                          table.assignedServerId ||
+                            area?.assignedServerId ||
+                            "",
+                        );
                         setSeatGuestCount(table.minCovers || 2);
                       }
                     }}
@@ -712,7 +837,11 @@ export function FloorPlanPage() {
                     className={`absolute flex cursor-pointer flex-col items-center justify-center border-2 transition-shadow shadow-md hover:shadow-lg ${
                       config.border
                     } ${config.bg} ${
-                      isRound ? "rounded-full" : table.shape === "BOOTH" ? "rounded-2xl border-t-8" : "rounded-xl"
+                      isRound
+                        ? "rounded-full"
+                        : table.shape === "BOOTH"
+                          ? "rounded-2xl border-t-8"
+                          : "rounded-xl"
                     } ${designerMode ? "cursor-move ring-2 ring-amber-400 ring-offset-1" : ""}`}
                   >
                     {/* Table Number & Status Pill */}
@@ -741,7 +870,9 @@ export function FloorPlanPage() {
                     ) : table.assignedServerName ? (
                       <div className="mt-1 flex items-center space-x-1 text-2xs font-medium text-indigo-700">
                         <User className="h-3 w-3 shrink-0" />
-                        <span className="truncate max-w-[65px]">{table.assignedServerName.split(" ")[0]}</span>
+                        <span className="truncate max-w-[65px]">
+                          {table.assignedServerName.split(" ")[0]}
+                        </span>
                       </div>
                     ) : (
                       <span className="mt-1 text-2xs font-medium text-gray-400">
@@ -766,7 +897,9 @@ export function FloorPlanPage() {
                   Table {selectedTable.tableNumber}
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Capacity: {selectedTable.minCovers} - {selectedTable.maxCovers} guests • Shape: {selectedTable.shape}
+                  Capacity: {selectedTable.minCovers} -{" "}
+                  {selectedTable.maxCovers} guests • Shape:{" "}
+                  {selectedTable.shape}
                 </p>
               </div>
               <span
@@ -795,12 +928,18 @@ export function FloorPlanPage() {
               </div>
               <select
                 value={selectedTable.assignedServerId || ""}
-                onChange={(e) => handleAssignTableServer(selectedTable.id, e.target.value || null)}
+                onChange={(e) =>
+                  handleAssignTableServer(
+                    selectedTable.id,
+                    e.target.value || null,
+                  )
+                }
                 disabled={isSubmitting}
                 className="w-full rounded-lg border border-gray-300 bg-white p-2 text-xs font-medium text-gray-800 shadow-2xs focus:border-indigo-500 focus:outline-none"
               >
                 <option value="">
-                  {diningAreas.find((a) => a.id === selectedTable.diningAreaId)?.assignedServerName
+                  {diningAreas.find((a) => a.id === selectedTable.diningAreaId)
+                    ?.assignedServerName
                     ? `Inherit from Section (${diningAreas.find((a) => a.id === selectedTable.diningAreaId)?.assignedServerName})`
                     : "Unassigned (No dedicated server)"}
                 </option>
@@ -826,11 +965,14 @@ export function FloorPlanPage() {
                       min={1}
                       max={selectedTable.maxCovers + 4}
                       value={seatGuestCount}
-                      onChange={(e) => setSeatGuestCount(parseInt(e.target.value, 10) || 1)}
+                      onChange={(e) =>
+                        setSeatGuestCount(parseInt(e.target.value, 10) || 1)
+                      }
                       className="w-24 rounded-lg border border-gray-300 p-2 text-center text-lg font-bold focus:border-indigo-500 focus:outline-none"
                     />
                     <span className="text-xs text-gray-500">
-                      Recommended: {selectedTable.minCovers}–{selectedTable.maxCovers} covers
+                      Recommended: {selectedTable.minCovers}–
+                      {selectedTable.maxCovers} covers
                     </span>
                   </div>
                 </div>
@@ -844,7 +986,9 @@ export function FloorPlanPage() {
                     onChange={(e) => setSeatServerUserId(e.target.value)}
                     className="mt-1.5 w-full rounded-lg border border-gray-300 p-2 text-xs font-medium focus:border-indigo-500 focus:outline-none"
                   >
-                    <option value="">Default (Assigned Server or Current User)</option>
+                    <option value="">
+                      Default (Assigned Server or Current User)
+                    </option>
                     {staffMembers.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.firstName} {s.lastName} ({s.role})
@@ -860,7 +1004,9 @@ export function FloorPlanPage() {
                     className="flex w-full items-center justify-center space-x-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-md hover:bg-indigo-500 disabled:opacity-50"
                   >
                     <Users className="h-4 w-4" />
-                    <span>{isSubmitting ? "Seating..." : "Seat Party Now"}</span>
+                    <span>
+                      {isSubmitting ? "Seating..." : "Seat Party Now"}
+                    </span>
                   </button>
                 </div>
               </form>
@@ -877,9 +1023,13 @@ export function FloorPlanPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-600">Seated At:</span>
+                    <span className="font-semibold text-gray-600">
+                      Seated At:
+                    </span>
                     <span className="font-bold text-indigo-950">
-                      {new Date(selectedTable.activeSession.seatedAt).toLocaleTimeString([], {
+                      {new Date(
+                        selectedTable.activeSession.seatedAt,
+                      ).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
@@ -887,7 +1037,9 @@ export function FloorPlanPage() {
                   </div>
                   {selectedTable.activeSession.serverName && (
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-gray-600">Server:</span>
+                      <span className="font-semibold text-gray-600">
+                        Server:
+                      </span>
                       <span className="font-bold text-indigo-950">
                         {selectedTable.activeSession.serverName}
                       </span>
@@ -901,21 +1053,27 @@ export function FloorPlanPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => handleUpdateStatus(selectedTable.id, "ORDERED")}
+                      onClick={() =>
+                        handleUpdateStatus(selectedTable.id, "ORDERED")
+                      }
                       disabled={isSubmitting}
                       className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100"
                     >
                       Mark Ordered
                     </button>
                     <button
-                      onClick={() => handleUpdateStatus(selectedTable.id, "SERVED")}
+                      onClick={() =>
+                        handleUpdateStatus(selectedTable.id, "SERVED")
+                      }
                       disabled={isSubmitting}
                       className="rounded-lg border border-orange-300 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-800 hover:bg-orange-100"
                     >
                       Mark Served
                     </button>
                     <button
-                      onClick={() => handleUpdateStatus(selectedTable.id, "PAYMENT_PENDING")}
+                      onClick={() =>
+                        handleUpdateStatus(selectedTable.id, "PAYMENT_PENDING")
+                      }
                       disabled={isSubmitting}
                       className="rounded-lg border border-purple-300 bg-purple-50 px-3 py-2 text-xs font-bold text-purple-800 hover:bg-purple-100"
                     >
@@ -931,7 +1089,9 @@ export function FloorPlanPage() {
                   </div>
 
                   <button
-                    onClick={() => handleUpdateStatus(selectedTable.id, "DIRTY")}
+                    onClick={() =>
+                      handleUpdateStatus(selectedTable.id, "DIRTY")
+                    }
                     disabled={isSubmitting}
                     className="mt-2 w-full rounded-xl bg-rose-600 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-rose-700 disabled:opacity-50"
                   >
@@ -945,10 +1105,13 @@ export function FloorPlanPage() {
             {selectedTable.status === "DIRTY" && (
               <div className="mt-5 space-y-4">
                 <p className="text-xs text-gray-500">
-                  This table has been cleared and is ready to be sanitized and reset.
+                  This table has been cleared and is ready to be sanitized and
+                  reset.
                 </p>
                 <button
-                  onClick={() => handleUpdateStatus(selectedTable.id, "AVAILABLE")}
+                  onClick={() =>
+                    handleUpdateStatus(selectedTable.id, "AVAILABLE")
+                  }
                   disabled={isSubmitting}
                   className="flex w-full items-center justify-center space-x-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-500"
                 >
@@ -977,12 +1140,15 @@ export function FloorPlanPage() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-gray-900">Transfer Party</h3>
             <p className="mt-1 text-xs text-gray-500">
-              Move guests from Table {selectedTable.tableNumber} to an available table.
+              Move guests from Table {selectedTable.tableNumber} to an available
+              table.
             </p>
 
             <form onSubmit={handleTransferTable} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700">Target Table</label>
+                <label className="block text-xs font-bold text-gray-700">
+                  Target Table
+                </label>
                 <select
                   required
                   value={transferTargetTableId}
@@ -991,10 +1157,14 @@ export function FloorPlanPage() {
                 >
                   <option value="">Select available table...</option>
                   {tables
-                    .filter((t) => t.id !== selectedTable.id && t.status === "AVAILABLE")
+                    .filter(
+                      (t) =>
+                        t.id !== selectedTable.id && t.status === "AVAILABLE",
+                    )
                     .map((t) => (
                       <option key={t.id} value={t.id}>
-                        Table {t.tableNumber} ({t.minCovers}-{t.maxCovers}p • {t.shape})
+                        Table {t.tableNumber} ({t.minCovers}-{t.maxCovers}p •{" "}
+                        {t.shape})
                       </option>
                     ))}
                 </select>
@@ -1025,13 +1195,17 @@ export function FloorPlanPage() {
       {showAreaModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900">New Dining Section</h3>
+            <h3 className="text-lg font-bold text-gray-900">
+              New Dining Section
+            </h3>
             <p className="mt-1 text-xs text-gray-500">
               e.g. Main Dining Room, Outdoor Patio, Mezzanine, Bar Lounge
             </p>
             <form onSubmit={handleCreateArea} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700">Section Name</label>
+                <label className="block text-xs font-medium text-gray-700">
+                  Section Name
+                </label>
                 <input
                   type="text"
                   required
@@ -1043,7 +1217,9 @@ export function FloorPlanPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700">Assign Section Server (Optional)</label>
+                <label className="block text-xs font-medium text-gray-700">
+                  Assign Section Server (Optional)
+                </label>
                 <select
                   value={newAreaServerId}
                   onChange={(e) => setNewAreaServerId(e.target.value)}
@@ -1085,11 +1261,14 @@ export function FloorPlanPage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <h3 className="text-lg font-bold text-gray-900">Add Table</h3>
             <p className="mt-1 text-xs text-gray-500">
-              Place a new physical table in {diningAreas.find((a) => a.id === activeAreaId)?.name}
+              Place a new physical table in{" "}
+              {diningAreas.find((a) => a.id === activeAreaId)?.name}
             </p>
             <form onSubmit={handleCreateTable} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700">Table Number / Label</label>
+                <label className="block text-xs font-medium text-gray-700">
+                  Table Number / Label
+                </label>
                 <input
                   type="text"
                   required
@@ -1101,10 +1280,14 @@ export function FloorPlanPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700">Table Shape</label>
+                <label className="block text-xs font-medium text-gray-700">
+                  Table Shape
+                </label>
                 <select
                   value={newTableShape}
-                  onChange={(e) => setNewTableShape(e.target.value as TableShape)}
+                  onChange={(e) =>
+                    setNewTableShape(e.target.value as TableShape)
+                  }
                   className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-indigo-500 focus:outline-none"
                 >
                   <option value="RECTANGLE">Rectangle (Standard)</option>
@@ -1117,31 +1300,41 @@ export function FloorPlanPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700">Min Covers</label>
+                  <label className="block text-xs font-medium text-gray-700">
+                    Min Covers
+                  </label>
                   <input
                     type="number"
                     min={1}
                     required
                     value={newMinCovers}
-                    onChange={(e) => setNewMinCovers(parseInt(e.target.value, 10) || 1)}
+                    onChange={(e) =>
+                      setNewMinCovers(parseInt(e.target.value, 10) || 1)
+                    }
                     className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-indigo-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700">Max Covers</label>
+                  <label className="block text-xs font-medium text-gray-700">
+                    Max Covers
+                  </label>
                   <input
                     type="number"
                     min={1}
                     required
                     value={newMaxCovers}
-                    onChange={(e) => setNewMaxCovers(parseInt(e.target.value, 10) || 1)}
+                    onChange={(e) =>
+                      setNewMaxCovers(parseInt(e.target.value, 10) || 1)
+                    }
                     className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-indigo-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700">Assign Dedicated Server (Optional)</label>
+                <label className="block text-xs font-medium text-gray-700">
+                  Assign Dedicated Server (Optional)
+                </label>
                 <select
                   value={newTableServerId}
                   onChange={(e) => setNewTableServerId(e.target.value)}
